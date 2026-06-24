@@ -42,6 +42,11 @@
           '';
         };
 
+        hstsPreload = pkgs.fetchurl {
+          url  = "https://raw.githubusercontent.com/chromium/chromium/main/net/http/transport_security_state_static.json";
+          hash = "sha256-Dr5tXRCfGmGbpbaSUMRn6+h4i7YrNDFNJkiMX1aBfs=";
+        };
+
         ladybirdSkia = pkgs.skia.overrideAttrs (prev: {
           gnFlags = prev.gnFlags ++ [
             "extra_cflags+=[\"-DSKCMS_API=[[gnu::visibility(\\\"default\\\")]]\"]"
@@ -116,6 +121,10 @@
             ''}
 
             if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
+              if [ ! -f "$PWD/Caches/HSTSPreload/transport_security_state_static.json" ]; then
+                mkdir -p "$PWD/Caches/HSTSPreload"
+                cp ${hstsPreload} "$PWD/Caches/HSTSPreload/transport_security_state_static.json"
+              fi
               if [ ! -f "$PWD/Caches/UCD/version.txt" ]; then
                 mkdir -p "$PWD/Caches/UCD"
                 cp -r ${pkgs.unicode-character-database}/share/unicode/. "$PWD/Caches/UCD/"

@@ -11,12 +11,15 @@ Cross-distro development environment for [Ladybird](https://github.com/LadybirdB
 ## Install Nix
 
 ```bash
-sh <(curl -L https://nixos.org/nix/install) --daemon
+curl -L https://nixos.org/nix/install -o install-nix.sh
+sh install-nix.sh
 ```
 
-Restart your terminal, then enable flakes:
+Restart your shell, then verify and enable flakes:
 
 ```bash
+exec $SHELL
+which nix
 mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
