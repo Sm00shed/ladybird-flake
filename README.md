@@ -4,10 +4,6 @@
 
 Cross-distro development environment for [Ladybird](https://github.com/LadybirdBrowser/ladybird) using `nix develop`. Works on any Linux distribution (CachyOS, Ubuntu, Manjaro, Fedora, NixOS) and macOS without modifying the host system.
 
-## Requirements
-
-- [Nix](https://nixos.org/download/) with flakes enabled
-
 ## Install Nix
 
 ```bash
