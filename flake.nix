@@ -2,7 +2,7 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    nixpkgs.url     = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url     = "github:NixOS/nixpkgs/89570f24e97e614aa34aa9ab1c927b6578a43775";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -126,6 +126,9 @@
               patchelf
               libdrm.dev vulkan-headers vulkan-loader.dev glslang
               libGL.dev libpulseaudio.dev qt6Packages.qtmultimedia qt6Packages.qtwayland
+            ])
+            ++ pkgs.lib.optionals isDarwin (with pkgs; [
+              apple-sdk_15
             ]);
 
           shellHook = ''
