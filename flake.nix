@@ -88,7 +88,7 @@
           packages = libPkgs
             ++ [ llvm.clang llvm.clang-unwrapped ]
             ++ (with pkgs; [
-              cmake ninja pkg-config python3 perl cargo rustc ccache git patchelf
+              cmake ninja pkg-config python3 perl cargo rustc ccache git patchelf coreutils
               libtommath curlFull.dev fast-float ffmpeg.dev fmt fmt.dev fontconfig.dev
               libavif.dev libjxl.dev openssl.dev sdl3.dev simdutf brotli.dev lcms2.dev
               zstd.dev libidn2.dev libdrm.dev woff2.dev icu78.dev simdjson mimalloc227.dev
@@ -123,18 +123,18 @@
             if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
               if [ ! -f "$PWD/Caches/HSTSPreload/transport_security_state_static.json" ]; then
                 mkdir -p "$PWD/Caches/HSTSPreload"
-                cp ${hstsPreload} "$PWD/Caches/HSTSPreload/transport_security_state_static.json"
+                cp --no-preserve=mode ${hstsPreload} "$PWD/Caches/HSTSPreload/transport_security_state_static.json"
               fi
               if [ ! -f "$PWD/Caches/UCD/version.txt" ]; then
                 mkdir -p "$PWD/Caches/UCD"
-                cp -r ${pkgs.unicode-character-database}/share/unicode/. "$PWD/Caches/UCD/"
-                cp ${pkgs.unicode-emoji}/share/unicode/emoji/emoji-test.txt "$PWD/Caches/UCD/"
-                cp ${pkgs.unicode-idna}/share/unicode/idna/IdnaMappingTable.txt "$PWD/Caches/UCD/"
+                cp --no-preserve=mode -r ${pkgs.unicode-character-database}/share/unicode/. "$PWD/Caches/UCD/"
+                cp --no-preserve=mode ${pkgs.unicode-emoji}/share/unicode/emoji/emoji-test.txt "$PWD/Caches/UCD/"
+                cp --no-preserve=mode ${pkgs.unicode-idna}/share/unicode/idna/IdnaMappingTable.txt "$PWD/Caches/UCD/"
                 printf '%s' '${pkgs.unicode-character-database.version}' > "$PWD/Caches/UCD/version.txt"
               fi
               if [ ! -f "$PWD/Caches/PublicSuffix/public_suffix_list.dat" ]; then
                 mkdir -p "$PWD/Caches/PublicSuffix"
-                cp ${pkgs.publicsuffix-list}/share/publicsuffix/public_suffix_list.dat \
+                cp --no-preserve=mode ${pkgs.publicsuffix-list}/share/publicsuffix/public_suffix_list.dat \
                    "$PWD/Caches/PublicSuffix/"
               fi
             fi
