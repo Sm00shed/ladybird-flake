@@ -55,15 +55,15 @@ ninja -j$(nproc) -C Build/release
 
 **5. Run**
 ```bash
-./Build/release/bin/Ladybird
+Ladybird
 ```
 
-> Run Ladybird from within the `nix develop` shell.
+> Run Ladybird from within the `nix develop` shell using the `Ladybird` alias — this passes the Nix CA bundle automatically. Override with `LADYBIRD_CERTIFICATE=/your/cert.pem Ladybird`.
 
 ## What this flake provides
 
 - Clang 21 (explicit, never system compiler or Apple-Clang)
 - All dependencies pinned via `flake.lock`
 - `CMAKE_PREFIX_PATH` set to Nix store paths — cmake never reads `/usr/lib`
-- Unicode and Public Suffix List data pre-populated (no network downloads during build)
+- Unicode, Public Suffix List, HSTS Preload and CA certificates pre-populated — no network downloads during build
 - `$CLANGD_PATH` exported for VSCode integration
