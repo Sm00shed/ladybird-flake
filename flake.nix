@@ -96,7 +96,7 @@
               wuffsSinglefile libedit libedit.dev libpsl libpsl.dev harfbuzz.dev libjpeg.dev
               libpng.dev libxml2.dev sqlite.dev zlib.dev vulkan-headers vulkan-loader.dev glslang
               unicode-character-database unicode-emoji unicode-idna publicsuffix-list
-              dejavu_fonts liberation_ttf
+              dejavu_fonts liberation_ttf cacert
             ])
             ++ pkgs.lib.optionals isLinux (with pkgs; [
               libdrm.dev                                                  # ← fix: war ungeguarded
@@ -112,6 +112,7 @@
             export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${pkgs.angle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
+            export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
             unset VCPKG_ROOT
             unset CMAKE_TOOLCHAIN_FILE
 
