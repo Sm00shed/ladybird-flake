@@ -63,7 +63,7 @@
           curlFull ffmpeg.lib fontconfig.lib libavif angle libjxl libwebp libxcrypt
           openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 woff2.lib icu78
           mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib vulkan-loader ladybirdSkia
-          fmt simdutf simdjson libtommath
+          fmt simdutf simdjson libtommath libpsl libedit
         ] ++ pkgs.lib.optionals isLinux (with pkgs; [
           libdrm                                                          # ← fix: war ungeguarded
           libGL libpulseaudio qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
