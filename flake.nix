@@ -44,7 +44,7 @@
 
         hstsPreload = pkgs.fetchurl {
           url  = "https://raw.githubusercontent.com/chromium/chromium/main/net/http/transport_security_state_static.json";
-          hash = "sha256-Dr5tXRCfGmGbpbaSUMRn6+h4i7YrNDFNJkiMX1aBfs=";
+          hash = "sha256-YuiotSk0Lf3IHz/UjgCmU/brdB1lszob6DN4DXyjiWU=";
         };
 
         ladybirdSkia = pkgs.skia.overrideAttrs (prev: {
