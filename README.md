@@ -15,6 +15,9 @@ Restart your shell, then verify and enable flakes:
 
 ```bash
 exec $SHELL
+```
+
+```bash
 which nix
 mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
