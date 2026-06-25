@@ -27,8 +27,9 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
 **1. Clone Ladybird**
 ```bash
-git clone https://github.com/LadybirdBrowser/ladybird.git
+git clone https://github.com/LadybirdBrowser/ladybird.git 2>/dev/null || true
 cd ladybird
+git pull
 ```
 
 **2. Enter the dev shell**
