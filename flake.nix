@@ -61,10 +61,11 @@
 
         libPkgs = with pkgs; [
           curlFull ffmpeg.lib fontconfig.lib libavif angle libjxl libwebp libxcrypt
-          openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 libdrm woff2.lib icu78
+          openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 woff2.lib icu78
           mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib vulkan-loader ladybirdSkia
           fmt simdutf simdjson libtommath
         ] ++ pkgs.lib.optionals isLinux (with pkgs; [
+          libdrm                                                          # ← fix: war ungeguarded
           libGL libpulseaudio qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
           stdenv.cc.cc.lib
         ]);
@@ -91,13 +92,14 @@
               cmake ninja pkg-config python3 perl cargo rustc ccache git patchelf coreutils
               libtommath curlFull.dev fast-float ffmpeg.dev fmt fmt.dev fontconfig.dev
               libavif.dev libjxl.dev openssl.dev sdl3.dev simdutf brotli.dev lcms2.dev
-              zstd.dev libidn2.dev libdrm.dev woff2.dev icu78.dev simdjson mimalloc227.dev
+              zstd.dev libidn2.dev woff2.dev icu78.dev simdjson mimalloc227.dev  # ← fix: libdrm.dev entfernt
               wuffsSinglefile libedit libedit.dev libpsl libpsl.dev harfbuzz.dev libjpeg.dev
               libpng.dev libxml2.dev sqlite.dev zlib.dev vulkan-headers vulkan-loader.dev glslang
               unicode-character-database unicode-emoji unicode-idna publicsuffix-list
               dejavu_fonts liberation_ttf
             ])
             ++ pkgs.lib.optionals isLinux (with pkgs; [
+              libdrm.dev                                                  # ← fix: war ungeguarded
               libGL.dev libpulseaudio.dev qt6Packages.qtmultimedia qt6Packages.qtwayland
             ]);
 
