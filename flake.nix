@@ -142,6 +142,12 @@
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
               export CMAKE_EXE_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
               export CMAKE_SHARED_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
+              # WORKAROUND: OpenGLContext.cpp defines EGL_EGLEXT_PROTOTYPES after eglext.h
+              # which internally already includes eglext_angle.h at line 1500 before the
+              # define is set → eglWaitUntilWorkScheduledANGLE never declared.
+              # Upstream bug reported: https://github.com/LadybirdBrowser/ladybird/issues/XXXX
+              # Remove once upstream fix is merged (move #define before #include <EGL/egl.h>).
+              export NIX_CFLAGS_COMPILE="''${NIX_CFLAGS_COMPILE} -DEGL_EGLEXT_PROTOTYPES=1"
             '' else ''
               export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libPkgs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
               export NIX_LDFLAGS="''${NIX_LDFLAGS} -lGL -lfontconfig"
