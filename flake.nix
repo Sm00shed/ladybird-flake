@@ -113,6 +113,8 @@
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            export LADYBIRD_CERTIFICATE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            alias Ladybird="./Build/release/bin/Ladybird --certificate=$LADYBIRD_CERTIFICATE"
             unset VCPKG_ROOT
             unset CMAKE_TOOLCHAIN_FILE
 
