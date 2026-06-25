@@ -115,7 +115,11 @@
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
-            export LADYBIRD_CERTIFICATE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
+              mkdir -p "$PWD/Caches/CACERT"
+              cp --no-preserve=mode ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt "$PWD/Caches/CACERT/ca-bundle.crt"
+            fi
+            export LADYBIRD_CERTIFICATE="$PWD/Caches/CACERT/ca-bundle.crt"
             alias Ladybird="./Build/release/bin/Ladybird --certificate=$LADYBIRD_CERTIFICATE"
             unset VCPKG_ROOT
             unset CMAKE_TOOLCHAIN_FILE
