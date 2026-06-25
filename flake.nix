@@ -122,6 +122,9 @@
               export NIX_LDFLAGS="''${NIX_LDFLAGS} -lGL -lfontconfig"
             ''}
 
+            ulimit -s unlimited
+            export RUST_MIN_STACK=16777216
+
             if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
               if [ ! -f "$PWD/Caches/HSTSPreload/transport_security_state_static.json" ]; then
                 mkdir -p "$PWD/Caches/HSTSPreload"
