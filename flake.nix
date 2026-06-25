@@ -27,6 +27,15 @@
           patches = [];
         });
 
+        # libtommath mit mp_set_double-Fix:
+        # nixpkgs baut auf macOS ohne float-Support (MP_NO_FLOAT gesetzt),
+        # dadurch fehlt mp_set_double in der .dylib trotz Header-Deklaration.
+        libtommath130 = pkgs.libtommath.overrideAttrs (prev: {
+          cmakeFlags = (prev.cmakeFlags or []) ++ [
+            "-DMP_NO_FLOAT=OFF"
+          ];
+        });
+
         wuffsSinglefile = pkgs.stdenv.mkDerivation {
           name = "wuffs-singlefile-0.3.4";
           src  = pkgs.fetchFromGitHub {
@@ -63,7 +72,7 @@
           curlFull ffmpeg.lib fontconfig.lib libavif angle libjxl libwebp libxcrypt
           openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 woff2.lib icu78
           mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib ladybirdSkia
-          fmt simdutf simdjson libtommath libpsl libedit
+          fmt simdutf simdjson libtommath130 libpsl libedit
         ] ++ pkgs.lib.optionals isLinux (with pkgs; [
           libdrm vulkan-loader
           libGL libpulseaudio qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
@@ -75,7 +84,8 @@
           fontconfig.dev libavif.dev libjxl.dev libpng.dev libxml2.dev zlib.dev
           woff2.dev ffmpeg.dev libedit.dev libpsl.dev libjpeg.dev sqlite.dev
           mimalloc227.dev
-        ] ++ pkgs.lib.optionals isLinux (with pkgs; [
+        ] ++ [ libtommath130 ]
+          ++ pkgs.lib.optionals isLinux (with pkgs; [
           vulkan-loader.dev vulkan-headers
           libpulseaudio.dev libGL.dev
           qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
@@ -89,9 +99,10 @@
 
           packages = libPkgs
             ++ [ llvm.clang llvm.clang-unwrapped ]
+            ++ [ libtommath130 ]
             ++ (with pkgs; [
               cmake ninja pkg-config python3 perl cargo rustc ccache git coreutils
-              libtommath curlFull.dev fast-float ffmpeg.dev fmt fmt.dev fontconfig.dev
+              curlFull.dev fast-float ffmpeg.dev fmt fmt.dev fontconfig.dev
               libavif.dev libjxl.dev openssl.dev sdl3.dev simdutf brotli.dev lcms2.dev
               zstd.dev libidn2.dev woff2.dev icu78.dev simdjson mimalloc227.dev
               wuffsSinglefile libedit libedit.dev libpsl libpsl.dev harfbuzz.dev libjpeg.dev
