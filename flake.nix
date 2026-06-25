@@ -27,13 +27,13 @@
           patches = [];
         });
 
-        # libtommath mit mp_set_double-Fix:
-        # nixpkgs baut auf macOS ohne float-Support (MP_NO_FLOAT gesetzt),
-        # dadurch fehlt mp_set_double in der .dylib trotz Header-Deklaration.
+        # libtommath mit mp_set_double-Fix fuer macOS:
+        # Apple Clang definiert __STDC_IEC_559__ nicht, obwohl Intel-Macs
+        # vollstaendig IEEE-754-konform sind. Dadurch wird mp_set_double
+        # nicht in die .dylib kompiliert, obwohl es im Header deklariert ist.
+        # Fix: __STDC_IEC_559__=1 explizit setzen via NIX_CFLAGS_COMPILE.
         libtommath130 = pkgs.libtommath.overrideAttrs (prev: {
-          cmakeFlags = (prev.cmakeFlags or []) ++ [
-            "-DMP_NO_FLOAT=OFF"
-          ];
+          NIX_CFLAGS_COMPILE = (prev.NIX_CFLAGS_COMPILE or "") + " -D__STDC_IEC_559__=1";
         });
 
         wuffsSinglefile = pkgs.stdenv.mkDerivation {
@@ -126,11 +126,7 @@
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
-            if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
-              mkdir -p "$PWD/Caches/CACERT"
-              cp --no-preserve=mode ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt "$PWD/Caches/CACERT/ca-bundle.crt"
-            fi
-            export LADYBIRD_CERTIFICATE="$PWD/Caches/CACERT/ca-bundle.crt"
+            export LADYBIRD_CERTIFICATE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
             alias Ladybird="./Build/release/bin/Ladybird --certificate=$LADYBIRD_CERTIFICATE"
             unset VCPKG_ROOT
             unset CMAKE_TOOLCHAIN_FILE
