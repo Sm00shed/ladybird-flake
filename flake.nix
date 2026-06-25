@@ -9,10 +9,17 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
-
         isDarwin = builtins.match ".*-darwin" system != null;
         isLinux  = builtins.match ".*-linux"  system != null;
+
+        pkgs = import nixpkgs {
+          inherit system;
+          # macOS: apple-sdk_15 statt Standard 14.4 verwenden.
+          # NSCursorFrameResizePositionBottomRight wurde erst in macOS 15 eingefuehrt.
+          overlays = if isDarwin then [
+            (final: prev: { apple-sdk = prev.apple-sdk_15; })
+          ] else [];
+        };
 
         llvm = pkgs.llvmPackages_21;
 
