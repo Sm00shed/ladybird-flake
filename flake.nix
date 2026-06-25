@@ -11,8 +11,8 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        isDarwin = pkgs.stdenv.isDarwin;
-        isLinux  = pkgs.stdenv.isLinux;
+        isDarwin = builtins.match ".*-darwin" system != null;
+        isLinux  = builtins.match ".*-linux"  system != null;
 
         llvm = pkgs.llvmPackages_21;
 
@@ -62,10 +62,10 @@
         libPkgs = with pkgs; [
           curlFull ffmpeg.lib fontconfig.lib libavif angle libjxl libwebp libxcrypt
           openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 woff2.lib icu78
-          mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib vulkan-loader ladybirdSkia
-          fmt simdutf simdjson libtommath libpsl libedit
+          mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib ladybirdSkia
+          fmt simdutf simdjson libtommath
         ] ++ pkgs.lib.optionals isLinux (with pkgs; [
-          libdrm                                                          # ← fix: war ungeguarded
+          libdrm vulkan-loader
           libGL libpulseaudio qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
           stdenv.cc.cc.lib
         ]);
@@ -74,8 +74,9 @@
           icu78.dev harfbuzz.dev openssl.dev curlFull.dev sdl3.dev fmt.dev
           fontconfig.dev libavif.dev libjxl.dev libpng.dev libxml2.dev zlib.dev
           woff2.dev ffmpeg.dev libedit.dev libpsl.dev libjpeg.dev sqlite.dev
-          vulkan-loader.dev vulkan-headers mimalloc227.dev
+          mimalloc227.dev
         ] ++ pkgs.lib.optionals isLinux (with pkgs; [
+          vulkan-loader.dev vulkan-headers
           libpulseaudio.dev libGL.dev
           qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
         ]);
@@ -89,17 +90,18 @@
           packages = libPkgs
             ++ [ llvm.clang llvm.clang-unwrapped ]
             ++ (with pkgs; [
-              cmake ninja pkg-config python3 perl cargo rustc ccache git patchelf coreutils
+              cmake ninja pkg-config python3 perl cargo rustc ccache git coreutils
               libtommath curlFull.dev fast-float ffmpeg.dev fmt fmt.dev fontconfig.dev
               libavif.dev libjxl.dev openssl.dev sdl3.dev simdutf brotli.dev lcms2.dev
-              zstd.dev libidn2.dev woff2.dev icu78.dev simdjson mimalloc227.dev  # ← fix: libdrm.dev entfernt
+              zstd.dev libidn2.dev woff2.dev icu78.dev simdjson mimalloc227.dev
               wuffsSinglefile libedit libedit.dev libpsl libpsl.dev harfbuzz.dev libjpeg.dev
-              libpng.dev libxml2.dev sqlite.dev zlib.dev vulkan-headers vulkan-loader.dev glslang
+              libpng.dev libxml2.dev sqlite.dev zlib.dev
               unicode-character-database unicode-emoji unicode-idna publicsuffix-list
               dejavu_fonts liberation_ttf cacert
             ])
             ++ pkgs.lib.optionals isLinux (with pkgs; [
-              libdrm.dev                                                  # ← fix: war ungeguarded
+              patchelf
+              libdrm.dev vulkan-headers vulkan-loader.dev glslang
               libGL.dev libpulseaudio.dev qt6Packages.qtmultimedia qt6Packages.qtwayland
             ]);
 
