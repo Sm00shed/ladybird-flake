@@ -34,7 +34,7 @@
         # Fix: Quelldatei direkt patchen damit der Guard immer true ist.
         libtommath130 = pkgs.libtommath.overrideAttrs (prev: {
           postPatch = (prev.postPatch or "") + ''
-            substituteInPlace mp_set_double.c \
+            substituteInPlace bn_mp_set_double.c \
               --replace-fail \
                 '#if defined(__STDC_IEC_559__) || defined(__GCC_IEC_559)' \
                 '#if 1 /* forced: x86_64 is IEEE754 compliant */'
