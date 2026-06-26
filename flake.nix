@@ -2,7 +2,7 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    nixpkgs.url     = "github:NixOS/nixpkgs/89570f24e97e614aa34aa9ab1c927b6578a43775";
+    nixpkgs.url     = "github:NixOS/nixpkgs/3e41b24abd260e8f71dbe2f5737d24122f972158";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
