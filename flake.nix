@@ -147,6 +147,7 @@
             unset CMAKE_TOOLCHAIN_FILE
 
             ${if isDarwin then ''
+              export MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion)"
               export LIBRARY_PATH="${pkgs.fontconfig.lib}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
               export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
