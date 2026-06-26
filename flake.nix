@@ -14,6 +14,9 @@
 
         pkgs = import nixpkgs {
           inherit system;
+          config = {
+            allowDeprecatedx86_64Darwin = true;
+          };
           # macOS: apple-sdk_15 statt Standard 14.4 verwenden.
           # NSCursorFrameResizePositionBottomRight wurde erst in macOS 15 eingefuehrt.
           overlays = if isDarwin then [
@@ -147,6 +150,7 @@
             unset CMAKE_TOOLCHAIN_FILE
 
             ${if isDarwin then ''
+              export MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion)"
               export LIBRARY_PATH="${pkgs.fontconfig.lib}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
               export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
