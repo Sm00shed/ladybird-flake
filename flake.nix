@@ -14,6 +14,9 @@
 
         pkgs = import nixpkgs {
           inherit system;
+          config = {
+            allowDeprecatedx86_64Darwin = true;
+          };
           # macOS: apple-sdk_15 statt Standard 14.4 verwenden.
           # NSCursorFrameResizePositionBottomRight wurde erst in macOS 15 eingefuehrt.
           overlays = if isDarwin then [
