@@ -20,7 +20,18 @@
           # macOS: apple-sdk_15 statt Standard 14.4 verwenden.
           # NSCursorFrameResizePositionBottomRight wurde erst in macOS 15 eingefuehrt.
           overlays = if isDarwin then [
-            (final: prev: { apple-sdk = prev.apple-sdk_15; })
+            (final: prev: {
+              apple-sdk = prev.apple-sdk_15;
+              # gnum4 baut auf x86_64-darwin sonst nicht: gnulib spawni.c nutzt
+              # strchrnul (erst ab macOS 15.4 SDK), und -Werror macht die
+              # Verfuegbarkeitswarnung zum Fehler. Flag entschaerft das.
+              gnum4 = prev.gnum4.overrideAttrs (old: {
+                env = (old.env or {}) // {
+                  NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or "")
+                    + " -Wno-error=unguarded-availability-new";
+                };
+              });
+            })
           ] else [];
         };
 
