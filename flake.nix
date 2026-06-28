@@ -2,17 +2,46 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    nixpkgs.url     = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url     = "github:NixOS/nixpkgs/3e41b24abd260e8f71dbe2f5737d24122f972158";
+    # Used only to realize applyPatches on darwin. nixos-25.05 still has
+    # x86_64-darwin stdenv in cache.nixos.org; the main nixpkgs pin (post-deprecation)
+    # does not, so we cannot use it to bootstrap applyPatches itself.
+    nixpkgs-25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, nixpkgs-25_05, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        isDarwin = builtins.match ".*-darwin" system != null;
+        isLinux  = builtins.match ".*-linux"  system != null;
 
-        isDarwin = pkgs.stdenv.isDarwin;
-        isLinux  = pkgs.stdenv.isLinux;
+        # On darwin: patch nixpkgs source so the fix reaches the bootstrap stage.
+        # Overlays are explicitly excluded from the bootstrap closure
+        # (pkgs/stdenv/darwin/default.nix: "must not be included in the final overlay").
+        # We use the 25.05 stdenv (cached for darwin) to run applyPatches.
+        nixpkgsSrc =
+          if isDarwin then
+            nixpkgs-25_05.legacyPackages.${system}.applyPatches {
+              name = "nixpkgs-gnum4-darwin-fix";
+              src  = nixpkgs;
+              patches = [ ./patches/gnum4-darwin-strchrnul.patch ];
+            }
+          else nixpkgs;
+
+        pkgs = import nixpkgsSrc {
+          inherit system;
+          config = {
+            allowDeprecatedx86_64Darwin = true;
+          };
+          # macOS: apple-sdk_15 statt Standard 14.4 verwenden.
+          # NSCursorFrameResizePositionBottomRight wurde erst in macOS 15 eingefuehrt.
+          overlays = if isDarwin then [
+            (final: prev: {
+              apple-sdk = prev.apple-sdk_15;
+            })
+          ] else [];
+        };
 
         llvm = pkgs.llvmPackages_21;
 
@@ -25,6 +54,20 @@
             hash  = "sha256:0gdsf5n44kad22x53nkrm6p237s3kwqmr8chjmdl94866wwqrnng";
           };
           patches = [];
+        });
+
+        # libtommath mit mp_set_double-Fix fuer macOS:
+        # Apple Clang definiert __STDC_IEC_559__ nicht, obwohl Intel-Macs
+        # vollstaendig IEEE-754-konform sind. Dadurch wird mp_set_double
+        # nicht in die .dylib kompiliert, obwohl es im Header deklariert ist.
+        # Fix: Quelldatei direkt patchen damit der Guard immer true ist.
+        libtommath130 = pkgs.libtommath.overrideAttrs (prev: {
+          postPatch = (prev.postPatch or "") + ''
+            substituteInPlace bn_mp_set_double.c \
+              --replace-fail \
+                '#if defined(__STDC_IEC_559__) || defined(__GCC_IEC_559)' \
+                '#if 1 /* forced: x86_64 is IEEE754 compliant */'
+          '';
         });
 
         wuffsSinglefile = pkgs.stdenv.mkDerivation {
@@ -42,6 +85,11 @@
           '';
         };
 
+        hstsPreload = pkgs.fetchurl {
+          url  = "https://raw.githubusercontent.com/chromium/chromium/main/net/http/transport_security_state_static.json";
+          hash = "sha256-YuiotSk0Lf3IHz/UjgCmU/brdB1lszob6DN4DXyjiWU=";
+        };
+
         ladybirdSkia = pkgs.skia.overrideAttrs (prev: {
           gnFlags = prev.gnFlags ++ [
             "extra_cflags+=[\"-DSKCMS_API=[[gnu::visibility(\\\"default\\\")]]\"]"
@@ -56,10 +104,11 @@
 
         libPkgs = with pkgs; [
           curlFull ffmpeg.lib fontconfig.lib libavif angle libjxl libwebp libxcrypt
-          openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 libdrm woff2.lib icu78
-          mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib vulkan-loader ladybirdSkia
-          fmt simdutf simdjson libtommath
+          openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 woff2.lib icu78
+          mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib ladybirdSkia
+          fmt simdutf simdjson libtommath130 libpsl libedit
         ] ++ pkgs.lib.optionals isLinux (with pkgs; [
+          libdrm vulkan-loader
           libGL libpulseaudio qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
           stdenv.cc.cc.lib
         ]);
@@ -68,8 +117,10 @@
           icu78.dev harfbuzz.dev openssl.dev curlFull.dev sdl3.dev fmt.dev
           fontconfig.dev libavif.dev libjxl.dev libpng.dev libxml2.dev zlib.dev
           woff2.dev ffmpeg.dev libedit.dev libpsl.dev libjpeg.dev sqlite.dev
-          vulkan-loader.dev vulkan-headers mimalloc227.dev
-        ] ++ pkgs.lib.optionals isLinux (with pkgs; [
+          mimalloc227.dev
+        ] ++ [ libtommath130 ]
+          ++ pkgs.lib.optionals isLinux (with pkgs; [
+          vulkan-loader.dev vulkan-headers
           libpulseaudio.dev libGL.dev
           qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
         ]);
@@ -82,18 +133,24 @@
 
           packages = libPkgs
             ++ [ llvm.clang llvm.clang-unwrapped ]
+            ++ [ libtommath130 ]
             ++ (with pkgs; [
-              cmake ninja pkg-config python3 perl cargo rustc ccache git patchelf
-              libtommath curlFull.dev fast-float ffmpeg.dev fmt fmt.dev fontconfig.dev
+              cmake ninja pkg-config python3 perl cargo rustc ccache git coreutils
+              curlFull.dev fast-float ffmpeg.dev fmt fmt.dev fontconfig.dev
               libavif.dev libjxl.dev openssl.dev sdl3.dev simdutf brotli.dev lcms2.dev
-              zstd.dev libidn2.dev libdrm.dev woff2.dev icu78.dev simdjson mimalloc227.dev
+              zstd.dev libidn2.dev woff2.dev icu78.dev simdjson mimalloc227.dev
               wuffsSinglefile libedit libedit.dev libpsl libpsl.dev harfbuzz.dev libjpeg.dev
-              libpng.dev libxml2.dev sqlite.dev zlib.dev vulkan-headers vulkan-loader.dev glslang
+              libpng.dev libxml2.dev sqlite.dev zlib.dev
               unicode-character-database unicode-emoji unicode-idna publicsuffix-list
-              dejavu_fonts liberation_ttf
+              dejavu_fonts liberation_ttf cacert
             ])
             ++ pkgs.lib.optionals isLinux (with pkgs; [
+              patchelf
+              libdrm.dev vulkan-headers vulkan-loader.dev glslang
               libGL.dev libpulseaudio.dev qt6Packages.qtmultimedia qt6Packages.qtwayland
+            ])
+            ++ pkgs.lib.optionals isDarwin (with pkgs; [
+              apple-sdk_15
             ]);
 
           shellHook = ''
@@ -105,27 +162,57 @@
             export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${pkgs.angle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
+            export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            # Zertifikat in Caches/CACERT kopieren — Landlock-Sandbox auf Linux
+            # blockiert direkte Nix-Store-Pfade fuer RequestServer.
+            # Caches/ ist explizit als erlaubter Pfad in SandboxLinux.cpp eingetragen.
+            # Override: LADYBIRD_CERTIFICATE=/eigener/pfad.crt vor dem Aufruf setzen.
+            if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
+              mkdir -p "$PWD/Caches/CACERT"
+              cp --no-preserve=mode ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
+                 "$PWD/Caches/CACERT/ca-bundle.crt"
+            fi
+            export LADYBIRD_CERTIFICATE="''${LADYBIRD_CERTIFICATE:-$PWD/Caches/CACERT/ca-bundle.crt}"
+            alias Ladybird="./Build/release/bin/Ladybird --certificate=$LADYBIRD_CERTIFICATE"
             unset VCPKG_ROOT
             unset CMAKE_TOOLCHAIN_FILE
 
             ${if isDarwin then ''
+              export MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion)"
               export LIBRARY_PATH="${pkgs.fontconfig.lib}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
+              export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
+              export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
+              export CMAKE_EXE_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
+              export CMAKE_SHARED_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
+              # WORKAROUND: OpenGLContext.cpp defines EGL_EGLEXT_PROTOTYPES after eglext.h
+              # which internally already includes eglext_angle.h at line 1500 before the
+              # define is set → eglWaitUntilWorkScheduledANGLE never declared.
+              # Upstream bug reported: https://github.com/LadybirdBrowser/ladybird/issues/XXXX
+              # Remove once upstream fix is merged (move #define before #include <EGL/egl.h>).
+              export NIX_CFLAGS_COMPILE="''${NIX_CFLAGS_COMPILE} -DEGL_EGLEXT_PROTOTYPES=1"
             '' else ''
               export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libPkgs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
               export NIX_LDFLAGS="''${NIX_LDFLAGS} -lGL -lfontconfig"
             ''}
 
+            ulimit -s unlimited
+            export RUST_MIN_STACK=16777216
+
             if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
+              if [ ! -f "$PWD/Caches/HSTSPreload/transport_security_state_static.json" ]; then
+                mkdir -p "$PWD/Caches/HSTSPreload"
+                cp --no-preserve=mode ${hstsPreload} "$PWD/Caches/HSTSPreload/transport_security_state_static.json"
+              fi
               if [ ! -f "$PWD/Caches/UCD/version.txt" ]; then
                 mkdir -p "$PWD/Caches/UCD"
-                cp -r ${pkgs.unicode-character-database}/share/unicode/. "$PWD/Caches/UCD/"
-                cp ${pkgs.unicode-emoji}/share/unicode/emoji/emoji-test.txt "$PWD/Caches/UCD/"
-                cp ${pkgs.unicode-idna}/share/unicode/idna/IdnaMappingTable.txt "$PWD/Caches/UCD/"
+                cp --no-preserve=mode -r ${pkgs.unicode-character-database}/share/unicode/. "$PWD/Caches/UCD/"
+                cp --no-preserve=mode ${pkgs.unicode-emoji}/share/unicode/emoji/emoji-test.txt "$PWD/Caches/UCD/"
+                cp --no-preserve=mode ${pkgs.unicode-idna}/share/unicode/idna/IdnaMappingTable.txt "$PWD/Caches/UCD/"
                 printf '%s' '${pkgs.unicode-character-database.version}' > "$PWD/Caches/UCD/version.txt"
               fi
               if [ ! -f "$PWD/Caches/PublicSuffix/public_suffix_list.dat" ]; then
                 mkdir -p "$PWD/Caches/PublicSuffix"
-                cp ${pkgs.publicsuffix-list}/share/publicsuffix/public_suffix_list.dat \
+                cp --no-preserve=mode ${pkgs.publicsuffix-list}/share/publicsuffix/public_suffix_list.dat \
                    "$PWD/Caches/PublicSuffix/"
               fi
             fi

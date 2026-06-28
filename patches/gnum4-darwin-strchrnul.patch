@@ -1,0 +1,14 @@
+--- a/pkgs/by-name/gn/gnum4/package.nix
++++ b/pkgs/by-name/gn/gnum4/package.nix
+@@ -45,6 +45,11 @@ stdenv.mkDerivation (finalAttrs: {
+   configureFlags = [
+     "--with-syscmd-shell=${stdenv.shell}"
+   ]
++  ++ lib.optionals stdenv.hostPlatform.isDarwin [
++    # macOS SDK >=15.4 declares strchrnul as API_AVAILABLE(macos(15.4)).
++    # gnulib detects it as present but cc-wrapper adds -Werror=unguarded-availability.
++    "ac_cv_func_strchrnul=no"
++  ]
+   ++ lib.optional stdenv.hostPlatform.isMinGW "CFLAGS=-fno-stack-protector";
+
+   meta = {
