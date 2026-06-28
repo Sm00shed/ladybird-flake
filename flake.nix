@@ -2,10 +2,11 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    nixpkgs.url     = "github:NixOS/nixpkgs/3e41b24abd260e8f71dbe2f5737d24122f972158";
+    nixpkgs.url     = "github:Sm00shed/nixpkgs/gnum4-darwin-strchrnul-fix";
     # Used only to realize applyPatches on darwin. nixos-25.05 still has
     # x86_64-darwin stdenv in cache.nixos.org; the main nixpkgs pin (post-deprecation)
     # does not, so we cannot use it to bootstrap applyPatches itself.
+    # nixpkgs-25_05 wird nicht mehr benoetigt -- gnum4-Fix ist direkt im Fork.
     nixpkgs-25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -16,20 +17,9 @@
         isDarwin = builtins.match ".*-darwin" system != null;
         isLinux  = builtins.match ".*-linux"  system != null;
 
-        # On darwin: patch nixpkgs source so the fix reaches the bootstrap stage.
-        # Overlays are explicitly excluded from the bootstrap closure
-        # (pkgs/stdenv/darwin/default.nix: "must not be included in the final overlay").
-        # We use the 25.05 stdenv (cached for darwin) to run applyPatches.
-        nixpkgsSrc =
-          if isDarwin then
-            nixpkgs-25_05.legacyPackages.${system}.applyPatches {
-              name = "nixpkgs-gnum4-darwin-fix";
-              src  = nixpkgs;
-              patches = [ ./patches/gnum4-darwin-strchrnul.patch ];
-            }
-          else nixpkgs;
-
-        pkgs = import nixpkgsSrc {
+        # gnum4-Fix ist direkt im nixpkgs-Fork (Sm00shed/nixpkgs) eingebaut.
+        # applyPatches wird nicht mehr benoetigt.
+        pkgs = import nixpkgs {
           inherit system;
           config = {
             allowDeprecatedx86_64Darwin = true;
