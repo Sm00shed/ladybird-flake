@@ -3,15 +3,11 @@
 
   inputs = {
     nixpkgs.url     = "github:Sm00shed/nixpkgs/gnum4-darwin-strchrnul-fix";
-    # Used only to realize applyPatches on darwin. nixos-25.05 still has
-    # x86_64-darwin stdenv in cache.nixos.org; the main nixpkgs pin (post-deprecation)
-    # does not, so we cannot use it to bootstrap applyPatches itself.
-    # nixpkgs-25_05 wird nicht mehr benoetigt -- gnum4-Fix ist direkt im Fork.
-    nixpkgs-25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
+
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-25_05, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         isDarwin = builtins.match ".*-darwin" system != null;
