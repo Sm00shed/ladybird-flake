@@ -2,7 +2,7 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    nixpkgs.url     = "github:NixOS/nixpkgs/3e41b24abd260e8f71dbe2f5737d24122f972158";
+    nixpkgs.url = "github:Sm00shed/nixpkgs/gnum4-darwin-strchrnul-fix";
 
     flake-utils.url = "github:numtide/flake-utils";
   };
