@@ -13,8 +13,6 @@
         isDarwin = builtins.match ".*-darwin" system != null;
         isLinux  = builtins.match ".*-linux"  system != null;
 
-        # gnum4-Fix ist direkt im nixpkgs-Fork (Sm00shed/nixpkgs) eingebaut.
-        # applyPatches wird nicht mehr benoetigt.
         pkgs = import nixpkgs {
           inherit system;
           config = {
