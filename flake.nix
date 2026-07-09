@@ -2,10 +2,10 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    # Fork = Upstream nixpkgs 26.11 + gnum4 x86_64-darwin strchrnul-Fix (commit 869ed2bb).
-    # Reiner Upstream-Pin baut gnum4 auf x86_64-darwin nicht (macOS 15.4+ SDK,
-    # -Werror=unguarded-availability). flake.lock pinnt den konkreten rev.
-    nixpkgs.url     = "github:Sm00shed/nixpkgs/gnum4-darwin-strchrnul-fix";
+    # Fork = Upstream nixpkgs 26.11 + darwinMinVersion 15.4 (macOS 15.4+ SDK erfordert
+    # MACOSX_DEPLOYMENT_TARGET>=15.4 wenn apple-sdk_15 genutzt wird).
+    # flake.lock pinnt den konkreten rev.
+    nixpkgs.url     = "github:Sm00shed/nixpkgs/darwin-min-version-15-4";
 
     flake-utils.url = "github:numtide/flake-utils";
   };
