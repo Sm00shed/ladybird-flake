@@ -50,11 +50,8 @@ cmake -B Build/release -GNinja \
   -DICU_ROOT="$ICU_ROOT" \
   -DVCPKG_MANIFEST_MODE=OFF \
   -DENABLE_NETWORK_DOWNLOADS=OFF \
-  -DLADYBIRD_CACHE_DIR=Caches \
-  -DCMAKE_OSX_DEPLOYMENT_TARGET=15.4
+  -DLADYBIRD_CACHE_DIR=Caches
 ```
-
-> `-DCMAKE_OSX_DEPLOYMENT_TARGET=15.4` is only relevant on macOS and ignored on Linux.
 
 **4. Compile**
 
