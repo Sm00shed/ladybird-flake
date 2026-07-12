@@ -161,8 +161,9 @@
               cp --no-preserve=mode ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
                  "$PWD/Caches/CACERT/ca-bundle.crt"
             fi
+            LADYBIRD_SRC_DIR="$PWD"
             export LADYBIRD_CERTIFICATE="''${LADYBIRD_CERTIFICATE:-$PWD/Caches/CACERT/ca-bundle.crt}"
-            alias Ladybird="./Build/release/bin/Ladybird --certificate=$LADYBIRD_CERTIFICATE"
+            Ladybird() { "$LADYBIRD_SRC_DIR/Build/release/bin/Ladybird" --certificate="$LADYBIRD_CERTIFICATE" "$@"; }
             unset VCPKG_ROOT
             unset CMAKE_TOOLCHAIN_FILE
 
