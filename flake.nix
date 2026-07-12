@@ -36,7 +36,7 @@
             owner = "microsoft";
             repo  = "mimalloc";
             rev   = "v${version}";
-            hash  = "sha256:0gdsf5n44kad22x53nkrm6p237s3kwqmr8chjmdl94866wwqrnng";
+            hash  = "sha256-z9qMOTcGkURblZChXDGfQ58hrql52lG6EE1NQmxxuj0=";
           };
           patches = [];
         });
@@ -59,7 +59,7 @@
             owner = "google";
             repo  = "wuffs-mirror-release-c";
             rev   = "v0.3.4";
-            hash  = "sha256:1agwj1p7mhga0mb1qg0l0ry61fhyszzgyhgnfc00xvc7k9cagf2p";
+            hash  = "sha256-V7inWJqH7Q4Ac/ZB//7XHrpgfAYUPBxWBerBem6Q/Kk=";
           };
           dontBuild    = true;
           installPhase = ''
