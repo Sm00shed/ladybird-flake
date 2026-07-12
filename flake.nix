@@ -78,10 +78,16 @@
         };
 
         ladybirdSkia = pkgs.skia.overrideAttrs (prev: {
+          version = "148-unstable-2026-06-12";
+          src = pkgs.fetchgit {
+            url  = "https://skia.googlesource.com/skia.git";
+            rev  = "46f2e16555cac1211f4087cf24728fd741ac6495";
+            hash = "sha256-vpd/W0C8zT+wzShdJYdd18GmNp/TklqF7bGZxfIaDDM=";
+          };
           gnFlags = prev.gnFlags ++ [
             "extra_cflags+=[\"-DSKCMS_API=[[gnu::visibility(\\\"default\\\")]]\"]"
           ];
-          patches = (prev.patches or []) ++ [
+          patches = [
             (pkgs.fetchpatch {
               url  = "https://github.com/microsoft/vcpkg/raw/64e1fbee7d9f40eab5d112aaff648c4dcffe9e47/ports/skia/skpath-enable-edit-methods.patch";
               hash = "sha256-r5+HqSjACINn8igXqBANQsq0K+fn+Ut8L2VRs40FkTM=";
