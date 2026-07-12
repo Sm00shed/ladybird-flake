@@ -2,9 +2,7 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    # Fork = Upstream nixpkgs 26.11 + darwinMinVersion 15.4 (macOS 15.4+ SDK erfordert
-    # MACOSX_DEPLOYMENT_TARGET>=15.4 wenn apple-sdk_15 genutzt wird).
-    # flake.lock pinnt den konkreten rev.
+    # nixpkgs fork with darwinMinVersion=15.4; apple-sdk_15 requires MACOSX_DEPLOYMENT_TARGET>=15.4.
     nixpkgs.url     = "github:Sm00shed/nixpkgs/darwin-min-version-15-4";
 
     flake-utils.url = "github:numtide/flake-utils";
@@ -21,8 +19,8 @@
           config = {
             allowDeprecatedx86_64Darwin = true;
           };
-          # macOS: apple-sdk_15 statt Standard 14.4 verwenden.
-          # NSCursorFrameResizePositionBottomRight wurde erst in macOS 15 eingefuehrt.
+          # Use apple-sdk_15 instead of the default 14.4 —
+          # NSCursorFrameResizePositionBottomRight requires macOS 15.
           overlays = if isDarwin then [
             (final: prev: {
               apple-sdk = prev.apple-sdk_15;
@@ -43,11 +41,9 @@
           patches = [];
         });
 
-        # libtommath mit mp_set_double-Fix fuer macOS:
-        # Apple Clang definiert __STDC_IEC_559__ nicht, obwohl Intel-Macs
-        # vollstaendig IEEE-754-konform sind. Dadurch wird mp_set_double
-        # nicht in die .dylib kompiliert, obwohl es im Header deklariert ist.
-        # Fix: Quelldatei direkt patchen damit der Guard immer true ist.
+        # Apple Clang does not define __STDC_IEC_559__ even on IEEE-754-compliant x86_64,
+        # so mp_set_double is compiled out despite being declared in the header.
+        # Patch the guard to always true.
         libtommath130 = pkgs.libtommath.overrideAttrs (prev: {
           postPatch = (prev.postPatch or "") + ''
             substituteInPlace bn_mp_set_double.c \
@@ -157,10 +153,9 @@
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
-            # Zertifikat in Caches/CACERT kopieren — Landlock-Sandbox auf Linux
-            # blockiert direkte Nix-Store-Pfade fuer RequestServer.
-            # Caches/ ist explizit als erlaubter Pfad in SandboxLinux.cpp eingetragen.
-            # Override: LADYBIRD_CERTIFICATE=/eigener/pfad.crt vor dem Aufruf setzen.
+            # Copy CA cert into Caches/CACERT: Landlock sandbox on Linux blocks direct
+            # Nix store paths for RequestServer (see SandboxLinux.cpp).
+            # Override: set LADYBIRD_CERTIFICATE=/your/cert.crt before launching.
             if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
               mkdir -p "$PWD/Caches/CACERT"
               cp --no-preserve=mode ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
