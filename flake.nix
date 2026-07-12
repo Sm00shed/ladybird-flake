@@ -149,6 +149,7 @@
             export CMAKE_PREFIX_PATH="${cmakePrefixPath}''${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
             export ICU_ROOT=${pkgs.icu78.dev}
             export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${pkgs.angle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+            export CXXFLAGS="-I${pkgs.angle}/include''${CXXFLAGS:+ $CXXFLAGS}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
