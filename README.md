@@ -1,8 +1,15 @@
 # Ladybird Nix Dev Shell
 
-> **Work in progress. Proof of concept stage.**
+Cross-distro development environment for [Ladybird](https://github.com/LadybirdBrowser/ladybird) using `nix develop`.
 
-Cross-distro development environment for [Ladybird](https://github.com/LadybirdBrowser/ladybird) using `nix develop`. Tested on CachyOS and NixOS. macOS and other Linux distributions may work but are untested.
+Tested on:
+- NixOS (x86_64-linux)
+- Any Linux distribution with Nix installed (tested on CachyOS, aarch64-linux)
+- macOS 15.x Intel (x86_64-darwin)
+
+Tested with Ladybird commit `93c68c7968` (2026-07-12). Other commits may work but are untested.
+
+> **macOS note:** nixpkgs 26.05 has several known issues on x86_64-darwin (broken test suites, wrong deployment target, SDK misalignment). This flake works around all of them transparently.
 
 ## Install Nix
 
@@ -15,9 +22,6 @@ Restart your shell, then enable flakes:
 
 ```bash
 exec $SHELL
-```
-
-```bash
 mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
@@ -27,9 +31,8 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 **1. Clone Ladybird**
 
 ```bash
-git clone https://github.com/LadybirdBrowser/ladybird.git 2>/dev/null || true
+git clone https://github.com/LadybirdBrowser/ladybird.git
 cd ladybird
-git pull
 ```
 
 **2. Enter the dev shell**
@@ -47,8 +50,11 @@ cmake -B Build/release -GNinja \
   -DICU_ROOT="$ICU_ROOT" \
   -DVCPKG_MANIFEST_MODE=OFF \
   -DENABLE_NETWORK_DOWNLOADS=OFF \
-  -DLADYBIRD_CACHE_DIR=Caches
+  -DLADYBIRD_CACHE_DIR=Caches \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=15.4
 ```
+
+> `-DCMAKE_OSX_DEPLOYMENT_TARGET=15.4` is only relevant on macOS and ignored on Linux.
 
 **4. Compile**
 
@@ -71,3 +77,10 @@ Ladybird
 - `CMAKE_PREFIX_PATH` set to Nix store paths — cmake never reads `/usr/lib`
 - Unicode, Public Suffix List, HSTS Preload and CA certificates pre-populated
 - `$CLANGD_PATH` exported for VSCode integration
+- macOS: apple-sdk_15, correct deployment target alignment
+
+## macOS notes
+
+- Requires macOS 15.4 or later (apple-sdk_15 is used)
+- Uses a nixpkgs fork (`Sm00shed/nixpkgs`) with `darwinMinVersion = "15.4"` — this aligns the deployment target with the SDK and fixes build failures in gnulib-based packages (`strchrnul` availability)
+- x86_64-darwin (Intel Mac) is supported; aarch64-darwin (Apple Silicon) is untested
