@@ -152,7 +152,8 @@
             export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${pkgs.angle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
             # CVDisplayLinkRelease is outside its pragma diagnostic block in VSyncScheduler.cpp:177
             # (introduced by PR #9722, not yet fixed upstream). Suppress until upstream fixes it.
-            export CXXFLAGS="-I${pkgs.angle}/include -Wno-deprecated-declarations''${CXXFLAGS:+ $CXXFLAGS}"
+            # TabController.mm:1500: BOOL/bool lambda return type mismatch, upstream bug.
+            export CXXFLAGS="-I${pkgs.angle}/include -Wno-deprecated-declarations -Wno-error=return-type''${CXXFLAGS:+ $CXXFLAGS}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
