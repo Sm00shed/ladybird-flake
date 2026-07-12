@@ -118,6 +118,8 @@
         devShells.default = pkgs.mkShell {
           name = "ladybird-dev";
 
+          NIX_ENFORCE_NO_NATIVE = "";
+
           packages = libPkgs
             ++ [ llvm.clang llvm.clang-unwrapped ]
             ++ [ libtommath130 ]
