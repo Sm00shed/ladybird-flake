@@ -150,7 +150,9 @@
             export CMAKE_PREFIX_PATH="${cmakePrefixPath}''${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
             export ICU_ROOT=${pkgs.icu78.dev}
             export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${pkgs.angle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-            export CXXFLAGS="-I${pkgs.angle}/include''${CXXFLAGS:+ $CXXFLAGS}"
+            # CVDisplayLinkRelease is outside its pragma diagnostic block in VSyncScheduler.cpp:177
+            # (introduced by PR #9722, not yet fixed upstream). Suppress until upstream fixes it.
+            export CXXFLAGS="-I${pkgs.angle}/include -Wno-deprecated-declarations''${CXXFLAGS:+ $CXXFLAGS}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
