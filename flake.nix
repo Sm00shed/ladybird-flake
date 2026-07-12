@@ -87,12 +87,7 @@
           gnFlags = prev.gnFlags ++ [
             "extra_cflags+=[\"-DSKCMS_API=[[gnu::visibility(\\\"default\\\")]]\"]"
           ];
-          patches = [
-            (pkgs.fetchpatch {
-              url  = "https://github.com/microsoft/vcpkg/raw/64e1fbee7d9f40eab5d112aaff648c4dcffe9e47/ports/skia/skpath-enable-edit-methods.patch";
-              hash = "sha256-r5+HqSjACINn8igXqBANQsq0K+fn+Ut8L2VRs40FkTM=";
-            })
-          ];
+          patches = [];
         });
 
         libPkgs = with pkgs; [
