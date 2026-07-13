@@ -88,8 +88,18 @@
           patches = [];
         });
 
+        # nixpkgs stable has a broken angle.pc: 'Cflags: -I' and 'Libs: -L' without paths.
+        # Fixed in nixpkgs master (PR #528602, merged 2026-06-09) but not backported to 26.05.
+        ladybirdAngle = pkgs.angle.overrideAttrs (prev: {
+          postFixup = (prev.postFixup or "") + ''
+            substituteInPlace $out/lib/pkgconfig/angle.pc \
+              --replace-fail 'Cflags: -I' 'Cflags: -I''${includedir}' \
+              --replace-fail 'Libs: -L ' 'Libs: -L''${libdir} '
+          '';
+        });
+
         libPkgs = with pkgs; [
-          curlFull ffmpeg.lib fontconfig.lib libavif angle libjxl libwebp libxcrypt
+          curlFull ffmpeg.lib fontconfig.lib libavif ladybirdAngle libjxl libwebp libxcrypt
           openssl sdl3 brotli.lib libhwy lcms2 zstd libidn2 woff2.lib icu78
           mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib ladybirdSkia
           fmt simdutf simdjson libtommath130 libpsl libedit
@@ -147,11 +157,11 @@
             export CMAKE_BUILD_TYPE=Release
             export CMAKE_PREFIX_PATH="${cmakePrefixPath}''${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
             export ICU_ROOT=${pkgs.icu78.dev}
-            export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${pkgs.angle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+            export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${ladybirdAngle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
             # CVDisplayLinkRelease is outside its pragma diagnostic block in VSyncScheduler.cpp:177
             # (introduced by PR #9722, not yet fixed upstream). Suppress until upstream fixes it.
             # TabController.mm:1500: BOOL/bool lambda return type mismatch, upstream bug.
-            export CXXFLAGS="-I${pkgs.angle}/include -Wno-deprecated-declarations -Wno-error=return-type''${CXXFLAGS:+ $CXXFLAGS}"
+            export CXXFLAGS="-Wno-deprecated-declarations -Wno-error=return-type''${CXXFLAGS:+ $CXXFLAGS}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
