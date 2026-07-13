@@ -93,8 +93,8 @@
         ladybirdAngle = pkgs.angle.overrideAttrs (prev: {
           postFixup = (prev.postFixup or "") + ''
             substituteInPlace $out/lib/pkgconfig/angle.pc \
-              --replace-fail 'Cflags: -I' 'Cflags: -I''${includedir}' \
-              --replace-fail 'Libs: -L ' 'Libs: -L''${libdir} '
+              --replace-fail  'Cflags: -I' 'Cflags: -I''${includedir}' \
+              --replace-quiet 'Libs: -L '  'Libs: -L''${libdir} '
           '';
         });
 
