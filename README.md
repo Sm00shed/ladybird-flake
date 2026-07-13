@@ -18,10 +18,15 @@ curl -L https://nixos.org/nix/install -o install-nix.sh
 sh install-nix.sh
 ```
 
-Restart your shell, then enable flakes:
+Restart your shell:
 
 ```bash
 exec $SHELL
+```
+
+Then enable flakes:
+
+```bash
 mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
