@@ -65,7 +65,7 @@ ninja -j$(nproc) -C Build/release
 Ladybird
 ```
 
-> Run using the `Ladybird` alias from within the `nix develop` shell — it passes the correct CA certificate automatically. Override with `LADYBIRD_CERTIFICATE=/your/cert.pem Ladybird`.
+> Run using the `Ladybird` function from within the `nix develop` shell — it passes the correct CA certificate automatically and on macOS handles the app bundle path and sandbox flag. Override with `LADYBIRD_CERTIFICATE=/your/cert.pem Ladybird`.
 
 ## What this flake provides
 

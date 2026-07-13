@@ -163,7 +163,6 @@
             fi
             LADYBIRD_SRC_DIR="$PWD"
             export LADYBIRD_CERTIFICATE="''${LADYBIRD_CERTIFICATE:-$PWD/Caches/CACERT/ca-bundle.crt}"
-            Ladybird() { "$LADYBIRD_SRC_DIR/Build/release/bin/Ladybird" --certificate="$LADYBIRD_CERTIFICATE" "$@"; }
             unset VCPKG_ROOT
             unset CMAKE_TOOLCHAIN_FILE
 
@@ -174,9 +173,12 @@
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
               export CMAKE_EXE_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
               export CMAKE_SHARED_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
+              # macOS builds Ladybird.app bundle; sandbox requires codesigning so disable it
+              Ladybird() { "$LADYBIRD_SRC_DIR/Build/release/bin/Ladybird.app/Contents/MacOS/Ladybird" --certificate="$LADYBIRD_CERTIFICATE" --disable-sandbox "$@"; }
             '' else ''
               export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libPkgs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
               export NIX_LDFLAGS="''${NIX_LDFLAGS} -lGL -lfontconfig"
+              Ladybird() { "$LADYBIRD_SRC_DIR/Build/release/bin/Ladybird" --certificate="$LADYBIRD_CERTIFICATE" "$@"; }
             ''}
 
             ulimit -s unlimited
