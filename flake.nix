@@ -181,7 +181,7 @@
               Ladybird() { "$LADYBIRD_SRC_DIR/Build/release/bin/Ladybird" --certificate="$LADYBIRD_CERTIFICATE" "$@"; }
             ''}
 
-            ulimit -s unlimited
+            ${if isLinux then "ulimit -s unlimited" else "ulimit -s hard"}
             export RUST_MIN_STACK=16777216
 
             if [ -f "$PWD/Meta/CMake/check_for_dependencies.cmake" ]; then
