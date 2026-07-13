@@ -43,6 +43,17 @@ nix develop github:Sm00shed/ladybird-flake
 
 **3. Configure**
 
+Linux:
+```bash
+cmake -B Build/release -GNinja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_LTO_FOR_RELEASE=OFF \
+  -DICU_ROOT="$ICU_ROOT" \
+  -DENABLE_NETWORK_DOWNLOADS=OFF \
+  -DLADYBIRD_CACHE_DIR=Caches
+```
+
+macOS:
 ```bash
 cmake -B Build/release -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
