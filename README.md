@@ -53,7 +53,7 @@ cmake -B Build/release -GNinja \
   -DLADYBIRD_CACHE_DIR=Caches
 ```
 
-macOS:
+macOS (x86_64 Intel only — Apple Silicon untested):
 ```bash
 cmake -B Build/release -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
