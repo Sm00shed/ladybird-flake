@@ -90,7 +90,12 @@
 
         # nixpkgs stable has a broken angle.pc: 'Cflags: -I' and 'Libs: -L' without paths.
         # Fixed in nixpkgs master (PR #528602, merged 2026-06-09) but not backported to 26.05.
-        ladybirdAngle = pkgs.angle.overrideAttrs (prev: {
+        # On Linux, build angle with Clang 20: Clang 21 ICEs on complex Vulkan backend templates
+        # (rx::vk::ImageHelper in SyncVk.cpp) with exit code 139 on certain x86_64 CPUs.
+        ladybirdAngle = (if isLinux
+          then pkgs.angle.override { stdenv = pkgs.llvmPackages_20.stdenv; }
+          else pkgs.angle
+        ).overrideAttrs (prev: {
           postFixup = (prev.postFixup or "") + ''
             substituteInPlace $out/lib/pkgconfig/angle.pc \
               --replace-fail  'Cflags: -I' 'Cflags: -I''${includedir}' \
