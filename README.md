@@ -93,9 +93,10 @@ Ladybird
 - Unicode, Public Suffix List, HSTS Preload and CA certificates pre-populated
 - `$CLANGD_PATH` exported for VSCode integration
 - macOS: apple-sdk_15, correct deployment target alignment
+- GNU coreutils included — `nproc` works on macOS without any system dependency
 
 ## macOS notes
 
 - Requires macOS 15.4 or later (apple-sdk_15 is used)
-- Uses a nixpkgs fork (`Sm00shed/nixpkgs`) with `darwinMinVersion = "15.4"` — this aligns the deployment target with the SDK and fixes build failures in gnulib-based packages (`strchrnul` availability)
+- Uses a nixpkgs fork (`Sm00shed/nixpkgs`) based on nixos-26.05 with one change: `darwinMinVersion = "15.4"` — this aligns the deployment target with the SDK and fixes build failures in gnulib-based packages (`strchrnul` availability)
 - x86_64-darwin (Intel Mac) is supported; aarch64-darwin (Apple Silicon) is untested
