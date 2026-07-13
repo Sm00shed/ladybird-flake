@@ -87,7 +87,7 @@ Ladybird
 
 ## What this flake provides
 
-- Clang 21 (explicit, never system compiler)
+- Clang 21 (explicit, never system compiler); ANGLE on Linux built with Clang 20 (Clang 21 ICE workaround)
 - All dependencies pinned via `flake.lock`
 - `CMAKE_PREFIX_PATH` set to Nix store paths — cmake never reads `/usr/lib`
 - Unicode, Public Suffix List, HSTS Preload and CA certificates pre-populated
