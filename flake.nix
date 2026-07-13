@@ -158,9 +158,10 @@
             export CMAKE_PREFIX_PATH="${cmakePrefixPath}''${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
             export ICU_ROOT=${pkgs.icu78.dev}
             export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${ladybirdAngle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-            # CVDisplayLinkRelease is outside its pragma diagnostic block in VSyncScheduler.cpp:177
-            # (introduced by PR #9722, not yet fixed upstream). Suppress until upstream fixes it.
-            # TabController.mm:1500: BOOL/bool lambda return type mismatch, upstream bug.
+            # CVDisplayLinkRelease is outside its pragma diagnostic block in VSyncScheduler.cpp:177.
+            # Reported upstream: https://github.com/LadybirdBrowser/ladybird/issues/10657
+            # TabController.mm:1498: BOOL/bool lambda return type mismatch.
+            # Reported upstream: https://github.com/LadybirdBrowser/ladybird/issues/10658
             export CXXFLAGS="-Wno-deprecated-declarations -Wno-error=return-type''${CXXFLAGS:+ $CXXFLAGS}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd

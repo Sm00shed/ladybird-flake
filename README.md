@@ -4,10 +4,10 @@ Cross-distro development environment for [Ladybird](https://github.com/LadybirdB
 
 Tested on:
 - NixOS (x86_64-linux)
-- Any Linux distribution with Nix installed (tested on CachyOS, aarch64-linux)
+- Any Linux distribution with Nix installed (tested on CachyOS, x86_64-linux)
 - macOS 15.x Intel (x86_64-darwin)
 
-Tested with Ladybird commit `93c68c7968` (2026-07-12). Other commits may work but are untested.
+Tested with Ladybird commit `1fb86929fd` (2026-07-13). Other commits may work but are untested.
 
 > **macOS note:** nixpkgs 26.05 has several known issues on x86_64-darwin (broken test suites, wrong deployment target, SDK misalignment). This flake works around all of them transparently.
 
