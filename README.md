@@ -46,6 +46,8 @@ cd ladybird
 nix develop github:Sm00shed/ladybird-flake
 ```
 
+> To pin to a specific revision: `nix develop github:Sm00shed/ladybird-flake/<commit-hash>`
+
 **3. Configure**
 
 Linux:
