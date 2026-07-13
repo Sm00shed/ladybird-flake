@@ -118,7 +118,7 @@
           NIX_ENFORCE_NO_NATIVE = "";
 
           packages = libPkgs
-            ++ [ llvm.clang llvm.clang-unwrapped ]
+            ++ [ llvm.clang ]
             ++ [ libtommath130 ]
             ++ (with pkgs; [
               cmake ninja pkg-config python3 perl cargo rustc ccache git coreutils
