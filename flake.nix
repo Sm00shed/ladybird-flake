@@ -94,7 +94,7 @@
           mimalloc227 harfbuzz libjpeg libpng libxml2 sqlite zlib ladybirdSkia
           fmt simdutf simdjson libtommath130 libpsl libedit
         ] ++ pkgs.lib.optionals isLinux (with pkgs; [
-          libdrm vulkan-loader
+          libdrm vulkan-loader vulkan-memory-allocator
           libGL libpulseaudio qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
           stdenv.cc.cc.lib
         ]);
@@ -106,7 +106,7 @@
           mimalloc227.dev
         ] ++ [ libtommath130 ]
           ++ pkgs.lib.optionals isLinux (with pkgs; [
-          vulkan-loader.dev vulkan-headers
+          vulkan-loader.dev vulkan-headers vulkan-memory-allocator
           libpulseaudio.dev libGL.dev
           qt6Packages.qtbase qt6Packages.qtmultimedia qt6Packages.qtwayland
         ]);
