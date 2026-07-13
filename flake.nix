@@ -90,10 +90,12 @@
 
         # nixpkgs stable has a broken angle.pc: 'Cflags: -I' and 'Libs: -L' without paths.
         # Fixed in nixpkgs master (PR #528602, merged 2026-06-09) but not backported to 26.05.
-        # nixpkgs Clang defines _LIBCPP_HARDENING_MODE_EXTENSIVE; angle sets _FAST → redefinition
-        # → Clang ICE (exit 139). Undefine first so angle's own cmake flag wins.
-        ladybirdAngle = pkgs.angle.overrideAttrs (prev: {
-          NIX_CFLAGS_COMPILE = toString (prev.NIX_CFLAGS_COMPILE or "") + " -U_LIBCPP_HARDENING_MODE";
+        # On Linux, build angle with Clang 20 stdenv: Clang 21 ICEs while parsing
+        # rx::vk::ImageHelper::SubresourceUpdate in vk_helpers.h (complex nested union type).
+        ladybirdAngle = (if isLinux
+          then pkgs.angle.override { stdenv = pkgs.llvmPackages_20.stdenv; }
+          else pkgs.angle
+        ).overrideAttrs (prev: {
           postFixup = (prev.postFixup or "") + ''
             substituteInPlace $out/lib/pkgconfig/angle.pc \
               --replace-fail  'Cflags: -I' 'Cflags: -I''${includedir}' \
