@@ -115,7 +115,7 @@
         devShells.default = pkgs.mkShell {
           name = "ladybird-dev";
 
-          NIX_ENFORCE_NO_NATIVE = "";
+          NIX_ENFORCE_NO_NATIVE = "0";
 
           packages = libPkgs
             ++ [ llvm.clang ]
