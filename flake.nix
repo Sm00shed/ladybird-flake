@@ -2,19 +2,21 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    # nixpkgs fork with darwinMinVersion=15.4; apple-sdk_15 requires MACOSX_DEPLOYMENT_TARGET>=15.4.
-    nixpkgs.url     = "github:Sm00shed/nixpkgs/darwin-min-version-15-4";
+    # Standard nixpkgs for Linux — uses binary cache, no rebuilds.
+    nixpkgs.url        = "github:NixOS/nixpkgs/nixos-26.05";
+    # Fork with darwinMinVersion=15.4; apple-sdk_15 requires MACOSX_DEPLOYMENT_TARGET>=15.4.
+    nixpkgs-darwin.url = "github:Sm00shed/nixpkgs/darwin-min-version-15-4";
 
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, nixpkgs-darwin, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         isDarwin = builtins.match ".*-darwin" system != null;
         isLinux  = builtins.match ".*-linux"  system != null;
 
-        pkgs = import nixpkgs {
+        pkgs = import (if isDarwin then nixpkgs-darwin else nixpkgs) {
           inherit system;
           config = {
             allowDeprecatedx86_64Darwin = true;
