@@ -88,20 +88,12 @@
           patches = [];
         });
 
-        # nixpkgs stable has a broken angle.pc: 'Cflags: -I' and 'Libs: -L' without paths.
-        # Fixed in nixpkgs master (PR #528602, merged 2026-06-09) but not backported to 26.05.
         # On Linux, build angle with Clang 20 stdenv: Clang 21 ICEs while parsing
         # rx::vk::ImageHelper::SubresourceUpdate in vk_helpers.h (complex nested union type).
-        ladybirdAngle = (if isLinux
+        # angle.pc is generated correctly since nixpkgs PR #528602 (merged 2026-06-09).
+        ladybirdAngle = if isLinux
           then pkgs.angle.override { stdenv = pkgs.llvmPackages_20.stdenv; }
-          else pkgs.angle
-        ).overrideAttrs (prev: {
-          postFixup = (prev.postFixup or "") + ''
-            substituteInPlace $out/lib/pkgconfig/angle.pc \
-              --replace-fail  'Cflags: -I' 'Cflags: -I''${includedir}' \
-              --replace-quiet 'Libs: -L '  'Libs: -L''${libdir} '
-          '';
-        });
+          else pkgs.angle;
 
         libPkgs = with pkgs; [
           curlFull ffmpeg.lib fontconfig.lib libavif ladybirdAngle libjxl libwebp libxcrypt
