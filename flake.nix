@@ -157,9 +157,7 @@
             export PKG_CONFIG_PATH="${ladybirdSkia}/lib/pkgconfig:${ladybirdAngle}/lib/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
             # CVDisplayLinkRelease is outside its pragma diagnostic block in VSyncScheduler.cpp:177.
             # Reported upstream: https://github.com/LadybirdBrowser/ladybird/issues/10657
-            # TabController.mm:1498: BOOL/bool lambda return type mismatch.
-            # Reported upstream: https://github.com/LadybirdBrowser/ladybird/issues/10658
-            export CXXFLAGS="-Wno-deprecated-declarations -Wno-error=return-type''${CXXFLAGS:+ $CXXFLAGS}"
+            export CXXFLAGS="-Wno-deprecated-declarations''${CXXFLAGS:+ $CXXFLAGS}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = with pkgs; [ dejavu_fonts liberation_ttf ]; }}
             export CLANGD_PATH=${llvm.clang-unwrapped}/bin/clangd
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
@@ -170,6 +168,16 @@
               mkdir -p "$PWD/Caches/CACERT"
               cp --no-preserve=mode ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
                  "$PWD/Caches/CACERT/ca-bundle.crt"
+              # The confirm_canceling_downloads lambda in TabController.mm has no
+              # explicit return type. On x86_64 macOS (BOOL = signed char) auto
+              # return-type deduction fails to reconcile `bool` and `BOOL`; this is a
+              # hard error, so no -W flag can suppress it. Patch in an explicit -> bool.
+              # Reported upstream: https://github.com/LadybirdBrowser/ladybird/issues/10658
+              tabcontroller="$PWD/UI/AppKit/Interface/TabController.mm"
+              if [ -f "$tabcontroller" ] && grep -q 'confirm_canceling_downloads = \[&\]() {' "$tabcontroller"; then
+                perl -pi -e 's/\Qconfirm_canceling_downloads = [&]() {\E/confirm_canceling_downloads = [&]() -> bool {/' \
+                  "$tabcontroller"
+              fi
             fi
             LADYBIRD_SRC_DIR="$PWD"
             export LADYBIRD_CERTIFICATE="''${LADYBIRD_CERTIFICATE:-$PWD/Caches/CACERT/ca-bundle.crt}"
