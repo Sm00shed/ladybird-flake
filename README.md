@@ -5,9 +5,11 @@ A Nix flake that provides a `nix develop` shell for building the
 supplies a pinned toolchain and every build dependency from the Nix store, so
 Ladybird's own dependency fetcher is never used.
 
-Tested on NixOS and other Linux distributions (x86_64-linux) and on Intel
-macOS (x86_64-darwin). Apple Silicon is untested. The pinned reference commit
-is Ladybird `1fb86929fd` (2026-07-13); other commits usually work.
+Tested scope: on Linux x86_64 the browser builds and runs. On macOS x86_64 it
+builds, but runtime testing is limited. Apple Silicon is untested.
+
+The pinned reference commit is Ladybird `1fb86929fd` (2026-07-13); other
+commits usually work.
 
 ## Requirements
 
@@ -61,14 +63,26 @@ ninja -j$(nproc) -C Build/release
 
 The CMake options above serve these purposes.
 
-| Option | Purpose |
-| --- | --- |
-| `-DCMAKE_BUILD_TYPE=Release` | Optimized build. |
-| `-DENABLE_LTO_FOR_RELEASE=OFF` | Disables link-time optimization to keep link times and memory use down. |
-| `-DICU_ROOT="$ICU_ROOT"` | Points CMake at the ICU 78 development tree from the store. The shell exports `ICU_ROOT`. |
-| `-DENABLE_NETWORK_DOWNLOADS=OFF` | Stops the build from fetching data files at configure time. The shell pre-populates them (see below). |
-| `-DLADYBIRD_CACHE_DIR=Caches` | Uses the in-tree `Caches` directory that the shell fills. |
-| `-DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"` | macOS only. Aligns the deployment target with apple-sdk_15. Without it the build falls back to an older target and fails. |
+`-DCMAKE_BUILD_TYPE=Release`
+  Optimized build.
+
+`-DENABLE_LTO_FOR_RELEASE=OFF`
+  Disables link-time optimization to keep link times and memory use down.
+
+`-DICU_ROOT="$ICU_ROOT"`
+  Points CMake at the ICU 78 development tree from the store. The shell exports
+  `ICU_ROOT`.
+
+`-DENABLE_NETWORK_DOWNLOADS=OFF`
+  Stops the build from fetching data files at configure time. The shell
+  pre-populates them (see below).
+
+`-DLADYBIRD_CACHE_DIR=Caches`
+  Uses the in-tree `Caches` directory that the shell fills.
+
+`-DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"`
+  macOS only. Aligns the deployment target with apple-sdk_15. Without it the
+  build falls back to an older target and fails.
 
 ## Running
 
@@ -92,10 +106,13 @@ LADYBIRD_CERTIFICATE=/path/to/cert.crt Ladybird
 
 The shell replaces Ladybird's vendored dependency handling. Ladybird normally
 uses vcpkg to fetch and build third-party libraries; here every library comes
-from the Nix store instead. The shell unsets `VCPKG_ROOT` and
-`CMAKE_TOOLCHAIN_FILE` so the build ignores vcpkg entirely, and it sets
-`CMAKE_PREFIX_PATH` to the store paths of each dependency so CMake never reads
-`/usr/lib` or other system locations.
+from the Nix store instead.
+
+The shell unsets `VCPKG_ROOT` and `CMAKE_TOOLCHAIN_FILE` so the build ignores
+vcpkg entirely.
+
+It sets `CMAKE_PREFIX_PATH` to the store paths of each dependency, so CMake
+never reads `/usr/lib` or other system locations.
 
 Several dependencies need overrides:
 
@@ -112,7 +129,7 @@ Several dependencies need overrides:
   compliant, so the function would otherwise be dropped. The patch forces the
   guard on.
 
-The shell also exports environment used by the build and pre-populates data
+The shell also exports environment used by the build, and pre-populates data
 caches:
 
 - `ICU_ROOT` points at the ICU 78 development tree, matching the `-DICU_ROOT`
@@ -144,16 +161,21 @@ reported upstream.
 ## Platform notes
 
 On Linux the environment uses the standard `nixos-26.05` nixpkgs, so all inputs
-come from the binary cache with no local rebuilds. Qt, Vulkan, PulseAudio, and
-the other Linux-only inputs are included.
+come from the binary cache with no local rebuilds. The Linux-only inputs (Qt,
+Vulkan, PulseAudio, libdrm, glslang) are present in the shell, but not all code
+paths that use them have been exercised.
 
 On macOS the build needs apple-sdk_15, because Ladybird references a macOS 15
 API. apple-sdk_15 requires a deployment target of 15.4 or later, but the
-nixpkgs default is lower. To fix this the flake pulls Darwin packages from a
-nixpkgs fork (`Sm00shed/nixpkgs`, branch `darwin-min-version-15-4`) that sets
+nixpkgs default is lower.
+
+To fix this the flake pulls Darwin packages from a nixpkgs fork
+(`Sm00shed/nixpkgs`, branch `darwin-min-version-15-4`) that sets
 `darwinMinVersion = "15.4"`. This aligns the deployment target with the SDK and
 avoids build failures in gnulib-based packages that depend on `strchrnul`
-availability. macOS 15.4 or later is therefore required.
+availability.
+
+macOS 15.4 or later is therefore required.
 
 ## Acknowledgements
 
