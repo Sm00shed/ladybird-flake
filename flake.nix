@@ -9,9 +9,17 @@
     nixpkgs-darwin.url = "github:Sm00shed/nixpkgs/darwin-min-version-15-4";
 
     flake-utils.url = "github:numtide/flake-utils";
+
+    # Pinned Ladybird source, tracked in versions.json. Not built here (the dev
+    # shell only provides deps) — this only records which revision is "current"
+    # and is overridden at runtime by `lb new` / `lb use` via --override-input.
+    ladybird = {
+      url = "github:LadybirdBrowser/ladybird/94a55b0e9045b1e96307c5e4f0242309c589ecd4";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-darwin, flake-utils }:
+  outputs = { self, nixpkgs, nixpkgs-darwin, flake-utils, ladybird }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         isDarwin = builtins.match ".*-darwin" system != null;
@@ -121,6 +129,110 @@
 
         cmakePrefixPath = pkgs.lib.concatStringsSep ":" (map toString cmakePrefixParts);
 
+        # nixpkgs source actually in use for this system (banner only).
+        nixpkgsSrc = if isDarwin then nixpkgs-darwin else nixpkgs;
+
+        # Tracked Ladybird revisions. Reverse-lookup the current rev's date for
+        # the banner; falls back to "untracked" when overridden to a loose rev.
+        versions     = builtins.fromJSON (builtins.readFile ./versions.json);
+        ladybirdRev  = ladybird.rev or "unknown";
+        ladybirdDate =
+          let names = builtins.attrNames
+            (pkgs.lib.filterAttrs (_: h: h == ladybirdRev) versions);
+          in if names == [] then "untracked" else builtins.head names;
+
+        # `lb`: manage which Ladybird revision the dev shell is pinned to.
+        #   lb new              fetch current upstream HEAD, enter shell on it
+        #   lb use <date|hash>  enter shell on a versions.json entry
+        #   lb ok               record the active rev in versions.json + commit/push
+        #   lb list             show tracked revisions
+        lb = pkgs.writeShellScriptBin "lb" ''
+          set -euo pipefail
+          export PATH="${pkgs.lib.makeBinPath (with pkgs; [ jq curl git coreutils ])}:$PATH"
+
+          REPO="LadybirdBrowser/ladybird"
+          FLAKE_REPO="Sm00shed/ladybird-flake"
+
+          # Maintainers keep a local clone next to the Ladybird source; testers
+          # just use the published flake. Use the local clone when present, else
+          # fall back to the GitHub reference.
+          FLAKE_DIR="''${LADYBIRD_FLAKE_DIR:-$PWD/../ladybird-flake}"
+          if [ -d "$FLAKE_DIR/.git" ]; then
+            FLAKE_REF="$FLAKE_DIR"; LOCAL=1
+          else
+            FLAKE_REF="github:$FLAKE_REPO"; LOCAL=0
+          fi
+
+          # versions.json from the local clone when available, else raw GitHub.
+          versions() {
+            if [ "$LOCAL" = 1 ]; then
+              cat "$FLAKE_DIR/versions.json"
+            else
+              curl -fsSL "https://raw.githubusercontent.com/$FLAKE_REPO/main/versions.json"
+            fi
+          }
+
+          override() {
+            exec nix develop "$FLAKE_REF" \
+              --override-input ladybird "github:$REPO/$1"
+          }
+
+          case "''${1:-}" in
+            new)
+              hash=$(curl -fsSL "https://api.github.com/repos/$REPO/commits/HEAD" \
+                       | jq -r .sha)
+              echo "upstream HEAD is ''${hash:0:8}"
+              override "$hash"
+              ;;
+            use)
+              key="''${2:-}"
+              [ -n "$key" ] || { echo "usage: lb use <date|hash>" >&2; exit 1; }
+              v=$(versions)
+              hash=$(printf '%s' "$v" | jq -r --arg k "$key" '.[$k] // empty')
+              if [ -z "$hash" ]; then
+                hash=$(printf '%s' "$v" | jq -r --arg k "$key" \
+                  'to_entries[] | select(.value | startswith($k)) | .value' \
+                  | head -n1)
+              fi
+              [ -n "$hash" ] || { echo "not in versions.json: $key" >&2; exit 1; }
+              echo "using ''${hash:0:8}"
+              override "$hash"
+              ;;
+            ok)
+              [ "$LOCAL" = 1 ] || {
+                echo "lb ok is maintainer-only: needs a local clone (set LADYBIRD_FLAKE_DIR)" >&2
+                exit 1
+              }
+              rev="''${LADYBIRD_REV:-}"
+              [ -n "$rev" ] || {
+                echo "LADYBIRD_REV unset — run inside the ladybird dev shell" >&2
+                exit 1
+              }
+              today=$(date +%F)
+              tmp=$(mktemp)
+              jq --arg d "$today" --arg h "$rev" '. + {($d): $h}' \
+                "$FLAKE_DIR/versions.json" > "$tmp"
+              mv "$tmp" "$FLAKE_DIR/versions.json"
+              git -C "$FLAKE_DIR" add versions.json
+              git -C "$FLAKE_DIR" commit -m "versions: pin $today (''${rev:0:8})"
+              git -C "$FLAKE_DIR" push
+              echo "recorded $today -> ''${rev:0:8}"
+              ;;
+            list)
+              versions | jq -r 'to_entries[] | "\(.key) \(.value)"' \
+                | while read -r d h; do
+                    mark=" "
+                    [ "$h" = "''${LADYBIRD_REV:-}" ] && mark="*"
+                    printf ' %s %s  %s\n' "$mark" "$d" "''${h:0:8}"
+                  done
+              ;;
+            *)
+              echo "usage: lb {new | use <date|hash> | ok | list}" >&2
+              exit 1
+              ;;
+          esac
+        '';
+
       in {
         devShells.default = pkgs.mkShell {
           name = "ladybird-dev";
@@ -129,6 +241,7 @@
 
           packages = libPkgs
             ++ [ llvm.clang llvm.lld ]
+            ++ [ lb ]
             ++ [ libtommath130 ]
             ++ (with pkgs; [
               cmake ninja pkg-config python3 perl cargo rustc ccache git coreutils
@@ -150,6 +263,7 @@
             ]);
 
           shellHook = ''
+            export LADYBIRD_REV=${ladybirdRev}
             export CC=${llvm.clang}/bin/clang
             export CXX=${llvm.clang}/bin/clang++
             export CMAKE_BUILD_TYPE=Release
@@ -222,6 +336,14 @@
                    "$PWD/Caches/PublicSuffix/"
               fi
             fi
+
+            echo ""
+            echo "Ladybird Dev Shell"
+            echo "   Source: ${builtins.substring 0 8 ladybirdRev} (${ladybirdDate})"
+            echo "   Env:    nixpkgs ${builtins.substring 0 8 nixpkgsSrc.rev}"
+            echo ""
+            echo "   lb new | lb use <date> | lb ok | lb list"
+            echo ""
           '';
         };
       }

@@ -18,6 +18,23 @@
         "type": "github"
       }
     },
+    "ladybird": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784373148,
+        "narHash": "sha256-yspZig1ZX3gggzQjjSy5lPIGgcRBZNa7x1BF0s2YBQE=",
+        "owner": "LadybirdBrowser",
+        "repo": "ladybird",
+        "rev": "94a55b0e9045b1e96307c5e4f0242309c589ecd4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LadybirdBrowser",
+        "repo": "ladybird",
+        "rev": "94a55b0e9045b1e96307c5e4f0242309c589ecd4",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1783703440,
@@ -53,6 +70,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "ladybird": "ladybird",
         "nixpkgs": "nixpkgs",
         "nixpkgs-darwin": "nixpkgs-darwin"
       }
