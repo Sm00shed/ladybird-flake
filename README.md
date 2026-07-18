@@ -5,38 +5,60 @@ A Nix flake that provides a `nix develop` shell for building the
 supplies a pinned toolchain and every build dependency from the Nix store, so
 Ladybird's own dependency fetcher is never used.
 
-Tested scope: on Linux x86_64 the browser builds and runs. On macOS x86_64 it
-builds, but runtime testing is limited. Apple Silicon is untested.
+Tested scope: on Linux x86_64 (NixOS and CachyOS) the browser builds and runs.
+On macOS x86_64 it builds, but runtime testing is limited. Apple Silicon is
+untested.
 
-The pinned reference commit is Ladybird `1fb86929fd` (2026-07-13); other
-commits usually work.
+The default source is the last tested Ladybird commit tracked in
+`versions.json`. Run `lb list` to see all tested versions.
 
 ## Requirements
 
-Nix with flakes enabled. To enable flakes, add this line to
-`~/.config/nix/nix.conf`:
+The only thing that must be installed on the host is Nix. No compiler, no
+CMake, no git — the shell brings its own Clang 21, LLD, CMake, Ninja, git, and
+the rest of the build inputs.
+
+### Install Nix
+
+On any Linux distribution or macOS (not needed on NixOS), install Nix with the
+official installer:
+
+```bash
+sh <(curl -L https://nixos.org/nix/install)
+```
+
+### Enable flakes
+
+Enable flakes once so they stay on. Add this line to `~/.config/nix/nix.conf`:
 
 ```
 experimental-features = nix-command flakes
 ```
 
-A C++ toolchain is not required on the host. The shell brings its own Clang 21,
-LLD, CMake, Ninja, and the rest of the build inputs.
+On NixOS, set it in `configuration.nix` instead and run `nixos-rebuild switch`:
+
+```nix
+nix.settings.experimental-features = [ "nix-command" "flakes" ];
+```
+
+After this, `nix develop github:Sm00shed/ladybird-flake` works directly.
 
 ## Quick start
 
-Clone Ladybird, enter the shell, configure, and build.
+Clone Ladybird, enter the shell, configure, and build:
 
 ```bash
 git clone https://github.com/LadybirdBrowser/ladybird.git
 cd ladybird
+```
+
+Then enter the shell (this opens an interactive subshell):
+
+```bash
 nix develop github:Sm00shed/ladybird-flake
 ```
 
-To pin the environment to an exact revision, append the commit hash:
-`nix develop github:Sm00shed/ladybird-flake/<commit-hash>`.
-
-Configure the build with CMake:
+The shell prints its banner and is ready. Configure the build with CMake:
 
 ```bash
 cmake -B Build/release -GNinja \
@@ -101,6 +123,49 @@ variable:
 ```bash
 LADYBIRD_CERTIFICATE=/path/to/cert.crt Ladybird
 ```
+
+## Source version management
+
+The `lb` command is available inside the shell and selects which Ladybird
+commit the shell builds. The active version is printed each time the shell
+starts:
+
+    Ladybird Dev Shell
+       Source: 94a55b0e (2026-07-18)
+       Env:    nixpkgs 8f0500b9
+
+`lb list`
+  Show all tested versions from `versions.json`.
+
+`lb use <date|hash>`
+  Re-enter the shell on a specific tested version by date, or on any commit by
+  hash.
+
+`lb new`
+  Re-enter the shell on the current upstream HEAD. Untested until confirmed.
+
+`lb ok`
+  Record the running version in `versions.json` and push it to the history.
+  Maintainer only.
+
+When filing a bug, include the source hash printed at startup.
+
+`lb` overrides only the Ladybird source. To pin the whole flake instead —
+toolchain and dependencies included — append the commit hash to the flake
+reference:
+
+```bash
+nix develop github:Sm00shed/ladybird-flake/<commit-hash>
+```
+
+`lb ok` is maintainer-only and needs a local clone of this flake next to the
+Ladybird source:
+
+    ~/ladybird/
+    ~/ladybird-flake/
+
+Point `lb` at it with `LADYBIRD_FLAKE_DIR=~/ladybird-flake` if it lives
+elsewhere.
 
 ## What this environment does
 
