@@ -307,6 +307,11 @@
               # Point SDKROOT at apple-sdk_15 via its sdkroot attr.
               export SDKROOT="${pkgs.apple-sdk_15.sdkroot}"
               export LIBRARY_PATH="${pkgs.fontconfig.lib}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
+              # Runtime lib path for the GPU Compositor (ANGLE libEGL/libGLESv2),
+              # which live in the Nix store, not next to the binary. macOS analog
+              # of the Linux LD_LIBRARY_PATH below — without it the Compositor
+              # fails with "Library not loaded: ./libEGL.dylib".
+              export DYLD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libPkgs}''${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
               export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
               export CMAKE_EXE_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
