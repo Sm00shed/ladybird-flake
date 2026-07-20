@@ -37,11 +37,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1783703440,
-        "narHash": "sha256-O3/YajjWo001VUIgD8BwaRdSNLUFe7nZ1qV5TwhRBcw=",
+        "lastModified": 1784432872,
+        "narHash": "sha256-n3gKTBIV4ZA5VQpUakffBe3KGu4+mhPoA34rrqS0GkA=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "8f0500b9660505dc3cb647775fe9a978a74b5283",
+        "rev": "fd1462031fdee08f65fd0b4c6b64e22239a77870",
         "type": "github"
       },
       "original": {
@@ -51,28 +51,11 @@
         "type": "github"
       }
     },
-    "nixpkgs-darwin": {
-      "locked": {
-        "lastModified": 1783782888,
-        "narHash": "sha256-H+8MljJr/Hi03zk8L1EvutF0UxjM3RlDnjnU9CtFxEg=",
-        "owner": "Sm00shed",
-        "repo": "nixpkgs",
-        "rev": "6c24b8b2886d1b407fecb53c8c7daeaa20c32c35",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Sm00shed",
-        "ref": "darwin-min-version-15-4",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
         "ladybird": "ladybird",
-        "nixpkgs": "nixpkgs",
-        "nixpkgs-darwin": "nixpkgs-darwin"
+        "nixpkgs": "nixpkgs"
       }
     },
     "systems": {

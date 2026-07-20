@@ -3,10 +3,11 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    # Standard nixpkgs for Linux — uses binary cache, no rebuilds.
-    nixpkgs.url        = "github:NixOS/nixpkgs/nixos-26.05";
-    # Fork with darwinMinVersion=15.4; apple-sdk_15 requires MACOSX_DEPLOYMENT_TARGET>=15.4.
-    nixpkgs-darwin.url = "github:Sm00shed/nixpkgs/darwin-min-version-15-4";
+    # TEST FLAKE — no nixpkgs fork. Standard nixpkgs on every platform.
+    # Hypothesis: keeping apple-sdk_15 out of the global overlay (so the
+    # bootstrap keeps the default SDK) plus a per-shell darwinMinVersionHook
+    # avoids the gnum4/strchrnul bootstrap failure that the fork worked around.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     flake-utils.url = "github:numtide/flake-utils";
 
@@ -19,24 +20,21 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-darwin, flake-utils, ladybird }:
+  outputs = { self, nixpkgs, flake-utils, ladybird }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         isDarwin = builtins.match ".*-darwin" system != null;
         isLinux  = builtins.match ".*-linux"  system != null;
 
-        pkgs = import (if isDarwin then nixpkgs-darwin else nixpkgs) {
+        # No fork, and deliberately NO global apple-sdk overlay: the bootstrap
+        # (gnum4 etc.) keeps the default SDK, so strchrnul stays unavailable and
+        # -Werror=unguarded-availability-new never fires. apple-sdk_15 is added
+        # only to the dev shell below, together with darwinMinVersionHook "15.4".
+        pkgs = import nixpkgs {
           inherit system;
           config = {
             allowDeprecatedx86_64Darwin = true;
           };
-          # Use apple-sdk_15 instead of the default 14.4 —
-          # NSCursorFrameResizePositionBottomRight requires macOS 15.
-          overlays = if isDarwin then [
-            (final: prev: {
-              apple-sdk = prev.apple-sdk_15;
-            })
-          ] else [];
         };
 
         llvm = pkgs.llvmPackages_21;
@@ -130,7 +128,7 @@
         cmakePrefixPath = pkgs.lib.concatStringsSep ":" (map toString cmakePrefixParts);
 
         # nixpkgs source actually in use for this system (banner only).
-        nixpkgsSrc = if isDarwin then nixpkgs-darwin else nixpkgs;
+        nixpkgsSrc = nixpkgs;
 
         # Tracked Ladybird revisions. Reverse-lookup the current rev's date for
         # the banner; falls back to "untracked" when overridden to a loose rev.
@@ -260,6 +258,10 @@
             ])
             ++ pkgs.lib.optionals isDarwin (with pkgs; [
               apple-sdk_15
+              # Raise the deployment target for this shell only (not the whole
+              # package set) so Ladybird compiles against SDK 15 with a 15.4
+              # target. "highest wins" — verified in the hook's setup-hook.sh.
+              (darwinMinVersionHook "15.4")
             ]);
 
           shellHook = ''
