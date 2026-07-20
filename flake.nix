@@ -255,14 +255,15 @@
               patchelf
               libdrm.dev vulkan-headers vulkan-loader.dev glslang
               libGL.dev libpulseaudio.dev qt6Packages.qtmultimedia qt6Packages.qtwayland
-            ])
-            ++ pkgs.lib.optionals isDarwin (with pkgs; [
-              apple-sdk_15
-              # Raise the deployment target for this shell only (not the whole
-              # package set) so Ladybird compiles against SDK 15 with a 15.4
-              # target. "highest wins" — verified in the hook's setup-hook.sh.
-              (darwinMinVersionHook "15.4")
             ]);
+
+          # apple-sdk_15 + hook as buildInputs (target role), NOT nativeBuildInputs:
+          # the apple-sdk setup-hook is role-dependent — as a buildInput it should
+          # activate SDK 15 for the compile, which packages/nativeBuildInputs did not.
+          buildInputs = pkgs.lib.optionals isDarwin [
+            pkgs.apple-sdk_15
+            (pkgs.darwinMinVersionHook "15.4")
+          ];
 
           shellHook = ''
             export LADYBIRD_REV=${ladybirdRev}
@@ -303,11 +304,8 @@
 
             ${if isDarwin then ''
               export MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion)"
-              # Point the SDK/sysroot at apple-sdk_15 without touching the stdenv
-              # (so the bootstrap keeps SDK 14.4). cmake picks SDKROOT up as
-              # CMAKE_OSX_SYSROOT — this is the piece the hook alone does NOT do.
-              # Use the canonical MacOSX.sdk (a glob matches three dirs).
-              export SDKROOT="${pkgs.apple-sdk_15}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+              # Point SDKROOT at apple-sdk_15 via its sdkroot attr.
+              export SDKROOT="${pkgs.apple-sdk_15.sdkroot}"
               export LIBRARY_PATH="${pkgs.fontconfig.lib}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
               export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
