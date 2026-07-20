@@ -306,7 +306,8 @@
               # Point the SDK/sysroot at apple-sdk_15 without touching the stdenv
               # (so the bootstrap keeps SDK 14.4). cmake picks SDKROOT up as
               # CMAKE_OSX_SYSROOT — this is the piece the hook alone does NOT do.
-              export SDKROOT="$(echo ${pkgs.apple-sdk_15}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk)"
+              # Use the canonical MacOSX.sdk (a glob matches three dirs).
+              export SDKROOT="${pkgs.apple-sdk_15}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
               export LIBRARY_PATH="${pkgs.fontconfig.lib}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
               export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
