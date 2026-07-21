@@ -98,9 +98,21 @@
         # On Linux, build angle with Clang 20 stdenv: Clang 21 ICEs while parsing
         # rx::vk::ImageHelper::SubresourceUpdate in vk_helpers.h (complex nested union type).
         # angle.pc is generated correctly since nixpkgs PR #528602 (merged 2026-06-09).
-        ladybirdAngle = if isLinux
+        ladybirdAngleBase = if isLinux
           then pkgs.angle.override { stdenv = pkgs.llvmPackages_20.stdenv; }
           else pkgs.angle;
+        # On macOS, ANGLE ships three libGLESv2 variants (standard, _with_capture,
+        # _vulkan_secondaries) that ALL define the ObjC class ANGLESwapCGLLayer.
+        # If the Compositor loads more than one, it segfaults with an ObjC class
+        # duplicate warning. Keep only the standard libGLESv2.dylib.
+        ladybirdAngle = if isDarwin
+          then ladybirdAngleBase.overrideAttrs (prev: {
+            postFixup = (prev.postFixup or "") + ''
+              rm -f "$out/lib/libGLESv2_with_capture.dylib" \
+                    "$out/lib/libGLESv2_vulkan_secondaries.dylib"
+            '';
+          })
+          else ladybirdAngleBase;
 
         libPkgs = with pkgs; [
           curlFull ffmpeg.lib fontconfig.lib libavif ladybirdAngle libjxl libwebp libxcrypt
