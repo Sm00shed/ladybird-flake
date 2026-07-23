@@ -51,28 +51,11 @@
         "type": "github"
       }
     },
-    "nixpkgs-darwin": {
-      "locked": {
-        "lastModified": 1783782888,
-        "narHash": "sha256-H+8MljJr/Hi03zk8L1EvutF0UxjM3RlDnjnU9CtFxEg=",
-        "owner": "Sm00shed",
-        "repo": "nixpkgs",
-        "rev": "6c24b8b2886d1b407fecb53c8c7daeaa20c32c35",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Sm00shed",
-        "ref": "darwin-min-version-15-4",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
         "ladybird": "ladybird",
-        "nixpkgs": "nixpkgs",
-        "nixpkgs-darwin": "nixpkgs-darwin"
+        "nixpkgs": "nixpkgs"
       }
     },
     "systems": {

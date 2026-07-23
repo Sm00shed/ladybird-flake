@@ -230,17 +230,25 @@ come from the binary cache with no local rebuilds. The Linux-only inputs (Qt,
 Vulkan, PulseAudio, libdrm, glslang) are present in the shell, but not all code
 paths that use them have been exercised.
 
-On macOS the build needs apple-sdk_15, because Ladybird references a macOS 15
-API. apple-sdk_15 requires a deployment target of 15.4 or later, but the
-nixpkgs default is lower.
+On macOS the environment also uses the standard `nixos-26.05` nixpkgs, so the
+dependencies come from the binary cache. Ladybird itself references a macOS 15
+API (`strchrnul`, `API_AVAILABLE(15.4)`), so it needs apple-sdk_15 and a
+deployment target of 15.4 or later.
 
-To fix this the flake pulls Darwin packages from a nixpkgs fork
-(`Sm00shed/nixpkgs`, branch `darwin-min-version-15-4`) that sets
-`darwinMinVersion = "15.4"`. This aligns the deployment target with the SDK and
-avoids build failures in gnulib-based packages that depend on `strchrnul`
-availability.
+Rather than a nixpkgs fork, the dev shell adds `apple-sdk_15` and
+`darwinMinVersionHook "15.4"` as `buildInputs` and exports `SDKROOT` at
+`apple-sdk_15.sdkroot`. Only Ladybird compiles against SDK 15; the dependencies
+stay on the cached default SDK, so there are no local rebuilds and no fork to
+maintain. The deployment target is pinned to 15.4, so the binary runs on
+macOS 15.4 or later.
 
-macOS 15.4 or later is therefore required.
+The GPU Compositor's ANGLE libraries (libEGL/libGLESv2) live in the Nix store,
+reached at runtime via `DYLD_FALLBACK_LIBRARY_PATH`. The fallback path is used
+deliberately instead of `DYLD_LIBRARY_PATH`: the latter would take precedence
+over a library's install name and inject the Nix libpng into Apple system tools
+(iconutil, ImageIO), crashing the PNG plugin. The fallback path is consulted
+only when a library is not resolved normally, so Apple's own libraries keep
+priority.
 
 ## Acknowledgements
 

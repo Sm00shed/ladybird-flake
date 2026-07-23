@@ -3,10 +3,10 @@
   description = "Ladybird browser development environment";
 
   inputs = {
-    # Standard nixpkgs for Linux — uses binary cache, no rebuilds.
-    nixpkgs.url        = "github:NixOS/nixpkgs/nixos-26.05";
-    # Fork with darwinMinVersion=15.4; apple-sdk_15 requires MACOSX_DEPLOYMENT_TARGET>=15.4.
-    nixpkgs-darwin.url = "github:Sm00shed/nixpkgs/darwin-min-version-15-4";
+    # Standard nixpkgs on every platform — keeps the binary cache (no rebuilds).
+    # SDK 15 is provided per-shell on macOS (apple-sdk_15 + darwinMinVersionHook
+    # below), so no nixpkgs fork is needed.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     flake-utils.url = "github:numtide/flake-utils";
 
@@ -19,24 +19,23 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-darwin, flake-utils, ladybird }:
+  outputs = { self, nixpkgs, flake-utils, ladybird }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         isDarwin = builtins.match ".*-darwin" system != null;
         isLinux  = builtins.match ".*-linux"  system != null;
 
-        pkgs = import (if isDarwin then nixpkgs-darwin else nixpkgs) {
+        # No fork and deliberately NO global apple-sdk overlay: the bootstrap
+        # (gnum4 etc.) keeps the default SDK, so strchrnul stays unavailable and
+        # -Werror=unguarded-availability-new never fires during the deps build.
+        # apple-sdk_15 is added only to the dev shell below, together with
+        # darwinMinVersionHook "15.4", so only Ladybird itself compiles against
+        # SDK 15 while the dependencies come straight from the binary cache.
+        pkgs = import nixpkgs {
           inherit system;
           config = {
             allowDeprecatedx86_64Darwin = true;
           };
-          # Use apple-sdk_15 instead of the default 14.4 —
-          # NSCursorFrameResizePositionBottomRight requires macOS 15.
-          overlays = if isDarwin then [
-            (final: prev: {
-              apple-sdk = prev.apple-sdk_15;
-            })
-          ] else [];
         };
 
         llvm = pkgs.llvmPackages_21;
@@ -129,8 +128,8 @@
 
         cmakePrefixPath = pkgs.lib.concatStringsSep ":" (map toString cmakePrefixParts);
 
-        # nixpkgs source actually in use for this system (banner only).
-        nixpkgsSrc = if isDarwin then nixpkgs-darwin else nixpkgs;
+        # nixpkgs source in use (banner only).
+        nixpkgsSrc = nixpkgs;
 
         # Tracked Ladybird revisions. Reverse-lookup the current rev's date for
         # the banner; falls back to "untracked" when overridden to a loose rev.
@@ -257,10 +256,17 @@
               patchelf
               libdrm.dev vulkan-headers vulkan-loader.dev glslang
               libGL.dev libpulseaudio.dev qt6Packages.qtmultimedia qt6Packages.qtwayland
-            ])
-            ++ pkgs.lib.optionals isDarwin (with pkgs; [
-              apple-sdk_15
             ]);
+
+          # apple-sdk_15 + hook as buildInputs (target role), NOT nativeBuildInputs:
+          # the apple-sdk setup-hook is role-dependent — only as a buildInput does
+          # it activate SDK 15 for the compile (via SDKROOT below). darwinMinVersionHook
+          # raises the deployment target to 15.4, required because strchrnul is
+          # API_AVAILABLE(15.4).
+          buildInputs = pkgs.lib.optionals isDarwin [
+            pkgs.apple-sdk_15
+            (pkgs.darwinMinVersionHook "15.4")
+          ];
 
           shellHook = ''
             export LADYBIRD_REV=${ladybirdRev}
@@ -300,12 +306,25 @@
             unset CMAKE_TOOLCHAIN_FILE
 
             ${if isDarwin then ''
-              export MACOSX_DEPLOYMENT_TARGET="$(sw_vers -productVersion)"
+              # 15.4 is the minimum: strchrnul is API_AVAILABLE(15.4). Pinning here
+              # (rather than sw_vers) keeps the binary runnable on macOS 15.4+.
+              export MACOSX_DEPLOYMENT_TARGET="15.4"
+              # Point SDKROOT at apple-sdk_15 via its sdkroot attr so cmake compiles
+              # Ladybird against SDK 15 while the deps stay on the cached default SDK.
+              export SDKROOT="${pkgs.apple-sdk_15.sdkroot}"
               export LIBRARY_PATH="${pkgs.fontconfig.lib}/lib''${LIBRARY_PATH:+:$LIBRARY_PATH}"
               export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
               export CMAKE_EXE_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
               export CMAKE_SHARED_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
+              # Runtime lib path for the GPU Compositor (ANGLE libEGL/libGLESv2 live
+              # in the Nix store, not next to the binary). Use the FALLBACK path, not
+              # DYLD_LIBRARY_PATH: the latter takes precedence over a library's install
+              # name and thus injects Nix libpng into Apple system tools (iconutil,
+              # ImageIO), crashing PNGReadPlugin at 0xbad4007 during the icns link step
+              # and when Ladybird loads its favicon. The fallback path is consulted
+              # only when a lib is not found normally, so system libpng keeps priority.
+              export DYLD_FALLBACK_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libPkgs}''${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
               # macOS builds Ladybird.app bundle; sandbox requires codesigning so disable it
               Ladybird() { "$LADYBIRD_SRC_DIR/Build/release/bin/Ladybird.app/Contents/MacOS/Ladybird" --certificate="$LADYBIRD_CERTIFICATE" --disable-sandbox "$@"; }
             '' else ''
