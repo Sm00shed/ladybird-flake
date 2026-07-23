@@ -103,18 +103,13 @@
           else pkgs.angle;
         # On macOS, ANGLE ships three libGLESv2 variants (standard, _with_capture,
         # _vulkan_secondaries) that all define the ObjC class ANGLESwapCGLLayer.
-        # The duplicate-class crash was reported for _with_capture vs each of the
-        # other two, so _with_capture is the stray copy to drop. Keep the standard
-        # libGLESv2.dylib AND libGLESv2_vulkan_secondaries.dylib: the standard lib
-        # depends on ./libGLESv2_vulkan_secondaries.dylib, so the Compositor fails
-        # to load ("Library not loaded") if that one is removed too.
-        ladybirdAngle = if isDarwin
-          then ladybirdAngleBase.overrideAttrs (prev: {
-            postFixup = (prev.postFixup or "") + ''
-              rm -f "$out/lib/libGLESv2_with_capture.dylib"
-            '';
-          })
-          else ladybirdAngleBase;
+        # Removing any variant is not viable: the Compositor links them via -l
+        # (from angle's link interface), so a missing dylib breaks the link with
+        # "library not found". Keep all variants; the earlier duplicate-class
+        # segfault was observed together with the DYLD_LIBRARY_PATH pollution
+        # (now fixed via DYLD_FALLBACK), so re-evaluate whether the objc
+        # "implemented in both" is merely a warning before touching angle again.
+        ladybirdAngle = ladybirdAngleBase;
 
         libPkgs = with pkgs; [
           curlFull ffmpeg.lib fontconfig.lib libavif ladybirdAngle libjxl libwebp libxcrypt
