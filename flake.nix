@@ -323,7 +323,15 @@
               # which live in the Nix store, not next to the binary. macOS analog
               # of the Linux LD_LIBRARY_PATH below — without it the Compositor
               # fails with "Library not loaded: ./libEGL.dylib".
-              export DYLD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libPkgs}''${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+              #
+              # Use the FALLBACK path, not DYLD_LIBRARY_PATH: the latter takes
+              # precedence over a library's install name and thus injects Nix
+              # libpng into Apple system tools (iconutil, ImageIO). That crashes
+              # PNGReadPlugin at 0xbad4007 during the icns conversion in the link
+              # step and again when Ladybird loads its default favicon. The
+              # fallback path is only consulted when a lib is not found normally,
+              # so system libpng keeps priority while ANGLE's libEGL is still found.
+              export DYLD_FALLBACK_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libPkgs}''${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
               export LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${LDFLAGS:+ $LDFLAGS}"
               export NIX_LDFLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics''${NIX_LDFLAGS:+ $NIX_LDFLAGS}"
               export CMAKE_EXE_LINKER_FLAGS="-framework CoreText -framework CoreFoundation -framework CoreGraphics"
